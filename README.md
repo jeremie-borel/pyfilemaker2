@@ -1,4 +1,4 @@
-#PyFileMaker - Integrating FileMaker and Python
+# PyFileMaker - Integrating FileMaker and Python
 * (c) 2016-2018 Jeremie Borel
 * (c) 2014-2016 Marcin Kawa, kawa.macin@gmail.com
 * (c) 2006-2008 Klokan Petr Pridal, klokan@klokan.cz
@@ -12,17 +12,15 @@ Old project urls:
 
 -------------------------------------------------------------------------------
 
-###TABLE OF CONTENTS
+### TABLE OF CONTENTS
 
 1. What is pyfilemaker2 ?
 2. Requirements
 3. How to install PyFileMaker
-4. How to set up your database
-5. Where can I find more info
-6. Changes
+4. Changes
 
 -------------------------------------------------------------------------------
-###1. WHAT IS pyfilemaker2?
+### 1. WHAT IS pyfilemaker2?
 
 pyfilemaker2 is based, but largely rewritten, from PyFileMaker 
 (https://github.com/aeguana/PyFileMaker) whose description is still valid:
@@ -46,7 +44,7 @@ pyfilemaker2 implements the following additional features:
 - 
 
 -------------------------------------------------------------------------------
-###2. REQUIREMENTS
+### 2. REQUIREMENTS
 
 At the time of the development (2018), the pyfilemaker2 is using:
 
@@ -60,7 +58,7 @@ debian jessie. Other plateforms have not been tested.
 You will also need a FileMaker server with the XML enabled of course.
 
 -------------------------------------------------------------------------------
-###3. HOW TO INSTALL PYFILEMAKER2
+### 3. HOW TO INSTALL PYFILEMAKER2
 
 You can install from pypi using pip
 ```
@@ -72,7 +70,7 @@ pip install -e git+https://github.com/aeguana/PyFileMaker.git#egg=PyFileMaker
 ```
 
 -------------------------------------------------------------------------------
-###6. CHANGES
+### 4. CHANGES
 
 Version 0.1
  - First release of the code
