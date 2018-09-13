@@ -1,0 +1,26 @@
+<?xml version ="1.0" encoding="UTF-8" standalone="no" ?><!DOCTYPE fmresultset PUBLIC "-//FMI//DTD fmresultset//EN" "https://essaim-norma.etat-de-vaud.ch/fmi/xml/fmresultset.dtd">
+<fmresultset xmlns="http://www.filemaker.com/xml/fmresultset" version="1.0">
+    <error code="0"></error>
+    <product build="06/16/2017" name="FileMaker Web Publishing Engine" version="16.0.2.212"></product>
+    <datasource database="DBNAMES" date-format="" layout="" table="" time-format="" timestamp-format="" total-count="3"></datasource>
+    <metadata>
+        <field-definition auto-enter="no" four-digit-year="no" global="no" max-repeat="1" name="DATABASE_NAME" not-empty="yes" numeric-only="no" result="text" time-of-day="no" type="normal"></field-definition>
+    </metadata>
+    <resultset count="3" fetch-size="9">
+        <record mod-id="0" record-id="0">
+            <field name="DATABASE_NAME">
+                <data>DB1</data>
+            </field>
+        </record>
+        <record mod-id="0" record-id="0">
+            <field name="DATABASE_NAME">
+                <data>D B2</data>
+            </field>
+        </record>
+        <record mod-id="0" record-id="0">
+            <field name="DATABASE_NAME">
+                <data>été</data>
+            </field>
+        </record>
+    </resultset>
+</fmresultset>
