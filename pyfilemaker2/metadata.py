@@ -7,8 +7,8 @@ from future.utils import python_2_unicode_compatible, raise_with_traceback
 from builtins import str
 
 import re
-from unidecode import unidecode
-from lxml import etree, objectify
+
+from lxml import etree
 
 from .errors import FmError, XmlError
 from .data import MutableDict
