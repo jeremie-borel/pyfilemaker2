@@ -64,10 +64,6 @@ You can install from pypi using pip
 ```
 $ pip install pyfilemaker2
 ```
-You also can install the development version directly from github
-```
-pip install -e git+https://github.com/aeguana/PyFileMaker.git#egg=PyFileMaker
-```
 
 -------------------------------------------------------------------------------
 ### 4. CHANGES
