@@ -63,6 +63,7 @@ class FmServer(object):
         default_request_kwargs.update( request_kwargs )
         self.request_kwargs = default_request_kwargs
         self.debug = debug
+        self.fm_meta = None
 
         # self.file_address = 'fmi/xml/cnt/data.{extension}'
 
@@ -260,7 +261,7 @@ class FmServer(object):
 
         query = FmQuery(action='-findquery', fm_server=self)
         query.pre_find( sort=sort, skip=skip, max=max )
-        query.add_param( '-query', ";".join( i for i in query_list ), parse_operator=False )
+        query.add_args( '-query', ";".join( i for i in query_list ) )
         for k,v in query_values:
             query.add_param( k,v, parse_operator=False )
 
@@ -471,18 +472,19 @@ class FmServer(object):
             url = self._build_url()
             url = url + '?' + query.format()
 
-        if self.debug:
-            # log.info("FmServer({})".format(url))
-            print("FmServer({})".format(url))
-            if not is_file:
-                for item in query.request:
-                    print( "  ", item )
 
         if paginate and not is_file:
             if '-skip' in query.args or '-max' in query.args:
                 raise AttributeError("One cannot specify a skip "
                 "or a max value in pagination mode.")
             return _paginate( fm_server=self, query=query, page_size=paginate )
+
+        if self.debug:
+            # log.info("FmServer({})".format(url))
+            print("FmServer({})".format(url))
+            if not is_file:
+                for item in query.request:
+                    print( "  ", item )
 
         resp = requests.get(
             url = url,
@@ -719,6 +721,7 @@ def _paginate( fm_server, query, page_size, current=0 ):
     query.set_skip( current )
     query.set_max( page_size )
     for item in fm_server_copy._do_request( query, is_file=False, paginate=None ):
+        fm_server.fm_meta = fm_server_copy.fm_meta
         yield item
     N = fm_server_copy.fetched_records_number()
     if N < page_size:
