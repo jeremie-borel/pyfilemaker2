@@ -29,7 +29,9 @@ class NumberCast(TypeCast):
 
 class TextCast(TypeCast):
     def __call__( self, value ):
-        return value
+        if value:
+            return value
+        return ''
 
 DummyCast=TextCast
 
