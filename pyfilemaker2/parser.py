@@ -47,15 +47,19 @@ def parse( stream, fm_meta=None, only_meta=False ):
             tag = fm_meta.get_tagname(elem)
             if tag == 'data':
                 value = decode(elem.text)
-                data_buffer.append( caster.caster(value) )
+                if caster:
+                    data_buffer.append( caster.caster(value) )
 
             elif tag == 'field':
                 raw_name = fm_meta.decode_attrs( elem.attrib.get('name', '') ) or None
-                field = fm_meta.get_fm_field(
-                    raw_name=raw_name,
-                    table=table
-                )
-                field.set_value( record=record, data_list=data_buffer )
+                try:
+                    field = fm_meta.get_fm_field(
+                        raw_name=raw_name,
+                        table=table
+                    )
+                    field.set_value( record=record, data_list=data_buffer )
+                except KeyError:
+                    pass
                 data_buffer = []
 
             elif tag == 'record':
@@ -111,10 +115,13 @@ def parse( stream, fm_meta=None, only_meta=False ):
             tag = fm_meta.get_tagname( elem )
 
             if tag == 'field':
-                caster = fm_meta.get_fm_field( 
-                    raw_name=fm_meta.decode_attrs(elem.attrib['name']),
-                    table=table
-                )
+                try:
+                    caster = fm_meta.get_fm_field( 
+                        raw_name=fm_meta.decode_attrs(elem.attrib['name']),
+                        table=table
+                    )
+                except KeyError:
+                    pass
 
             elif tag == 'relatedset':
                 table = elem.attrib['table']
