@@ -56,6 +56,7 @@ future==0.16.0
 ```
 
 The test suite also requires
+
 ````
 mock
 pytz
@@ -72,7 +73,9 @@ You will also need a FileMaker server with the XML enabled of course.
 
 You can install from pypi using pip
 
+```
 $ pip install pyfilemaker2
+```
 
 ---
 
