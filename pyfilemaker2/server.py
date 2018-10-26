@@ -80,7 +80,13 @@ class FmServer(object):
             )
         for key in optkeys:
             if key in kwargs:
-                self.options[key] = copy.copy( kwargs[key] )
+                base = getattr( self.__class__, key )
+                # copying default value if the argument is a dict.
+                if hasattr( base, 'update' ):
+                    self.options[key] = copy.copy( getattr( self.__class__, key ) )
+                    self.options[key].update( kwargs[key] )
+                else:
+                    self.options[key] = copy.copy( kwargs[key] )
             else:
                 self.options[key] = copy.copy( getattr( self.__class__, key ) )
 
