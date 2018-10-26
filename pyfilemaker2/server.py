@@ -15,26 +15,39 @@ from urllib.parse import urlparse, urlencode
 import requests, logging, copy, re
 
 from .metadata import FmMeta
-from .caster import BackCast
 from .errors import FmError
 from .parser import parse
 from .data import MutableDict
-
+from .caster import BackCast
 
 log = logging.getLogger( __name__ )
 
 __all__ = ['FmServer',]
 
 class FmServer(object):
+    """
+    Main class to interact with FM server instances.
+
+    Note that all the static arguments can also be 
+    passed in the **kwargs from the FmServder.__init__'s method.
+    """
+    meta_class = FmMeta
+    cast_map = None
+    back_cast_class = BackCast
+    request_kwargs = {
+        'stream' : True,
+        'verify': True,
+        'timeout': 25,
+    }
+    server_timezone = None
+
     def __init__(
         self, 
         url='http://login:password@localhost/fmi/xml/fmresultset.xml', 
         db='', 
         layout='', 
-        meta_class=FmMeta,
-        back_cast_class=BackCast,
-        request_kwargs = {},
-        debug=False 
+        debug=False,
+        **kwargs
     ):
         o = urlparse( url )
         path = o.path
@@ -52,20 +65,23 @@ class FmServer(object):
         
         self.db = db
         self.layout = layout
-        self.meta_class = meta_class
-        self.back_cast_class = back_cast_class
 
-        default_request_kwargs = {
-            'stream' : True,
-            'verify': False,
-            'timeout': 25,
-        }
-        default_request_kwargs.update( request_kwargs )
-        self.request_kwargs = default_request_kwargs
         self.debug = debug
         self.fm_meta = None
 
-        # self.file_address = 'fmi/xml/cnt/data.{extension}'
+        self.options = {}
+        optkeys = (
+                'meta_class', 
+                'back_cast_class',
+                'cast_map',
+                'request_kwargs',
+                'server_timezone'
+            )
+        for key in optkeys:
+            if key in kwargs:
+                self.options[key] = copy.copy( kwargs[key] )
+            else:
+                self.options[key] = copy.copy( getattr( self.__class__, key ) )
 
     def get_db_names(self):
         """Returns the list of databases available through xml"""
@@ -148,7 +164,7 @@ class FmServer(object):
         return stream
 
     def do_script_after(self, func, func_kwargs={}, script_name='', params=None):
-        pass
+        raise NotImplementedError("not yet implemented")
 
     def fetched_records_number( self ):
         """Returns the number of result in the resultset
@@ -489,7 +505,7 @@ class FmServer(object):
         resp = requests.get(
             url = url,
             auth = (self.url.get('username',''), self.url.get('password','')),
-            **self.request_kwargs
+            **self.options['request_kwargs']
         )
         # does this breaks streamed response ?
         resp.raise_for_status()
@@ -498,7 +514,10 @@ class FmServer(object):
             return resp.content
 
         # storing the fm_meta objects for later use
-        self.fm_meta = self.meta_class()
+        self.fm_meta = self.options['meta_class']( 
+            cast_map=self.options['cast_map'],
+            server_timezone = self.options['server_timezone'],
+        )
         self.fm_meta.query = query
         # parse returns a generator, so no try catch can be done here.
         return parse(
@@ -669,7 +688,8 @@ class FmQuery(object):
 
         # the value is casted back before being re-injected into xml.
         if not self.back_cast:
-            self.back_cast = self.fm_server.back_cast_class( fm_server=self.fm_server )
+            bc = self.fm_server.options['back_cast_class']
+            self.back_cast = bc( fm_server=self.fm_server )
         casted_value = self.back_cast( field=field,value=value )
 
         self._params.append( (field, casted_value) )

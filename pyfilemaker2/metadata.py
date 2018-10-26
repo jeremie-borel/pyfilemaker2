@@ -32,7 +32,12 @@ class FmMeta(object):
     - relatedset fields definition
 
     """
-    def __init__( self, cast_map=None ):
+    def __init__( self, cast_map=None, server_timezone=None ):
+        self.cast_map = default_cast_map
+        if cast_map:
+            self.cast_map.update( cast_map )
+        self.server_timezone = server_timezone
+
         self.ns = None
         self._ns_length = 0
         self.database = None
@@ -43,9 +48,7 @@ class FmMeta(object):
         self.db_name = None
         self.layout = None
         self.table = None
-        self.cast_map = cast_map or default_cast_map
         self.encoding = 'utf8'
-
         self.fields = {}
 
     def get_tagname( self, node ):

@@ -1,6 +1,6 @@
 # -*- coding: utf8 -*-
 from __future__ import unicode_literals, absolute_import, print_function
-import unittest, datetime
+import unittest, datetime, pytz
 
 from pyfilemaker2.metadata import FmMeta
 from pyfilemaker2.parser import parse
@@ -10,6 +10,7 @@ from pyfilemaker2.caster import (
     DateCast,
     TimeCast,
     TimestampCast,
+    BackCast,
 )
 
 import os
@@ -68,6 +69,24 @@ class TestFieldType(unittest.TestCase):
 
         for k,v in out.items():
             self.assertEqual( data[0][k], out[k] )
+
+    def test_data_tz(self):
+        f1 = os.path.join(basedir,'./fields_types.xml')
+        tz = pytz.timezone('Europe/Zurich')
+        d = datetime.datetime( year=2018, month=9, day=1, hour=11, minute=54, second=7 )
+        d = tz.normalize( tz.localize( d ) )
+
+        fm = FmMeta(
+            server_timezone=tz,
+        )
+        nodeiter = parse(
+            stream = f1,
+            fm_meta=fm,
+        )
+        data = [ p for p in nodeiter ]
+        val = data[0]['f_timestamp']
+
+        self.assertEqual( d, val )
 
     def test_non_ascii_chars(self):
         # https://{user}:{pswd}@{host}/fmi/xml/fmresultset.xml?-db=TestJeremie&-lay=test_awfull_table&-findall

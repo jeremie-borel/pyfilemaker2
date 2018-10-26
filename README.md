@@ -30,7 +30,7 @@ PyFileMaker is a set of Python modules that makes it easy to access and modify
 data stored in a FileMaker Pro/Server database. You can use it to query a FileMaker
 database, but you can also use it to add data to a FileMaker database, you
 can even use it to delete records and execute FileMaker scripts.
-````
+```
 
 pyfilemaker2 implements the following additional features:
 - FM server responses can be streamed and parsed 'on the fly' during the streaming. 
@@ -43,34 +43,47 @@ pyfilemaker2 implements the following additional features:
 - improved test battery
 - 
 
--------------------------------------------------------------------------------
+----
+
 ### 2. REQUIREMENTS
 
 At the time of the development (2018), the pyfilemaker2 is using:
 
+```
 requests==2.19.1
 lxml==4.2.5
 future==0.16.0
+```
+
+The test suite also requires
+````
+mock
+pytz
+```
 
 The code has been developped on Max OSX 10.13 and is used in production on 
 debian jessie. Other plateforms have not been tested.
 
 You will also need a FileMaker server with the XML enabled of course.
 
--------------------------------------------------------------------------------
+----
+
 ### 3. HOW TO INSTALL PYFILEMAKER2
 
 You can install from pypi using pip
-```
-$ pip install pyfilemaker2
-```
-You also can install the development version directly from github
-```
-pip install -e git+https://github.com/aeguana/PyFileMaker.git#egg=PyFileMaker
-```
 
--------------------------------------------------------------------------------
+$ pip install pyfilemaker2
+
+---
+
 ### 4. CHANGES
+
+0.1.9: - adding timezone support as FM datetime object are naive datetime
+       - changed the way the options are passed to FmServer object
+         so that a subclass with default
+         parameters can be used.
+         
+0.1.6: bug fixes in `do_find_query`
 
 Version 0.1
  - First release of the code

@@ -1,2 +1,12 @@
 
-https://xml:xml1234@10.242.155.14/fmi/xml/fmresultset.xml?-db=TestJeremie&-lay=layout1&-findall
+https://xml:xml1234@10.242.155.14/fmi/xml/fmresultset.xml?-db=TestJeremie&-lay=layout1&-findany
+
+# running unittest:
+python -m unittest discover
+
+
+# compiling a package:
+# as per https://python-packaging.readthedocs.io/en/latest/minimal.html
+rm -rf build dist pyfilemaker2.egg-info/
+python setup.py sdist
+python setup.py sdist upload

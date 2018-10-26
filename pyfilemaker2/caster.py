@@ -41,10 +41,11 @@ class DateCast(TypeCast):
 
     def __call__( self, value ):
         try:
-            return datetime.datetime.strptime(
+            d = datetime.datetime.strptime(
                 value,
                 self.pat,
-            ).date()
+            )
+            return d.date()
         except (ValueError,TypeError):
             return None
 
@@ -63,12 +64,17 @@ class TimeCast(TypeCast):
 class TimestampCast(TypeCast):
     def __init__( self, fm_field, fm_meta ):
         self.pat = fm_meta.timestamp_pattern
+        self.tz = fm_meta.server_timezone
     def __call__( self, value ):
         try:
-            return datetime.datetime.strptime(
+            d = datetime.datetime.strptime(
                 value,
                 self.pat,
             )
+            if self.tz:
+                d = self.tz.localize( d )
+                d = self.tz.normalize( d )
+            return d
         except (ValueError,TypeError):
             return None
 
@@ -81,11 +87,17 @@ class BackCast(object):
     def __init__( self, fm_server=None ):
         """The :fm_server: object is passed at the initialisation of this class.
         It can be used to cast some field in a different way"""
-        pass
+        if fm_server:
+            self.tz = fm_server.options['server_timezone']
 
     def __call__( self, field, value ):
         if isinstance( value, datetime.datetime ):
+            # if server timezone is set and the datetime is aware:
+            if self.tz and value.tzinfo is not None and value.tzinfo.utcoffset(value) is not None:
+                if self.tz != value.tzinfo:
+                    value = value.astimezone(self.tz)
             return value.strftime( self.__class__.FM_DEFAULT_TIMESTAMP )
+
         elif isinstance( value, datetime.date ):
             return value.strftime( self.__class__.FM_DEFAULT_DATE )
         elif isinstance( value, datetime.time ):
