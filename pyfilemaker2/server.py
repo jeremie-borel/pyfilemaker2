@@ -34,6 +34,7 @@ class FmServer(object):
     meta_class = FmMeta
     cast_map = None
     back_cast_class = BackCast
+    # ! WARNING: Some FMS *require* the stream=True argument. 
     request_kwargs = {
         'stream' : True,
         'verify': True,

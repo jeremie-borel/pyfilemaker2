@@ -28,9 +28,10 @@ def get_fm_server():
         db=TEST_FILE,
         request_kwargs={
             'verify': True,
-            'stream': False,
+            'stream': True,
+            'timeout': 25,
         },
-        debug=True,
+        debug=False,
     )
     return fm
 
@@ -78,58 +79,50 @@ class TestServerOffline(unittest.TestCase):
             'étoile mâtinée',
         ]))
 
-# class Test(unittest.TestCase):
-#     def test( self ):
-#         import requests
-#         u = "https://xml:xml1234@essaim-norma.etat-de-vaud.ch:443/fmi/xml/fmresultset.xml?-db=TestJeremie&-lay=test_table_query&value=0.5&value.op=lt&-lop=and&-find="
-#         with debug_requests():
-#             r = requests.get( u )
-#         print( "***", r.raw.read(), "***" )
+class TestServerOnline(unittest.TestCase):
 
-# class TestServerOnline(unittest.TestCase):
+    def test_find_equal( self ):
+        fm = get_fm_server()
+        fm.layout = 'test_table_query'
+        resultset = fm.do_find( id=1 )
+        r = tuple(resultset)
 
-#     def test_find_equal( self ):
-#         fm = get_fm_server()
-#         fm.layout = 'test_table_query'
-#         resultset = fm.do_find( id=1 )
-#         r = tuple(resultset)
+        self.assertEqual( len(r), 1 )
 
-#         self.assertEqual( len(r), 1 )
+        record = r[0]
 
-#         record = r[0]
+        data = {
+            'color': 'blue', 
+            'stamp': datetime.datetime(2018, 9, 12, 19, 48, 37), 
+            'id': 1, 
+            'value': 0.7, 
+            'day': datetime.date(2018, 9, 12),
+            'month': 'September',
+        }
 
-#         data = {
-#             'color': 'blue', 
-#             'stamp': datetime.datetime(2018, 9, 12, 19, 48, 37), 
-#             'id': 1, 
-#             'value': 0.7, 
-#             'day': datetime.date(2018, 9, 12),
-#             'month': 'September',
-#         }
+        self.assertEqual( record, data )
 
-#         self.assertEqual( record, data )
+    def test_find_with_operator( self ):
+        fm = get_fm_server()
+        fm.layout = 'test_table_query'
+        resultset = fm.do_find( value__lt=0.5 )
+        r = tuple(resultset)
+        self.assertEqual( len(r), 2 )
 
-#     def test_find_with_operator( self ):
-#         fm = get_fm_server()
-#         fm.layout = 'test_table_query'
-#         resultset = fm.do_find( value__lt=0.5 )
-#         r = tuple(resultset)
-#         self.assertEqual( len(r), 2 )
+    def test_find_with_date( self ):
+        fm = get_fm_server()
+        fm.layout = 'test_table_query'
+        date = datetime.datetime( 2018, 9, 12, 21, 0, 0 )
+        resultset = fm.do_find( stamp__gt=date )
+        r = tuple(resultset)
+        self.assertEqual( r[0]['id'], 3 )
 
-#     def test_find_with_date( self ):
-#         fm = get_fm_server()
-#         fm.layout = 'test_table_query'
-#         date = datetime.datetime( 2018, 9, 12, 21, 0, 0 )
-#         resultset = fm.do_find( stamp__gt=date )
-#         r = tuple(resultset)
-#         self.assertEqual( r[0]['id'], 3 )
-
-#     # def test_edit( self ):
-#     #     fm = get_fm_server()
-#     #     fm.layout = 'test_table_edit'
-#     #     resultset = fm.do_find( value__lt=0.5 )
-#     #     r = tuple(resultset)
-#     #     self.assertEqual( len(r), 2 )
+    # def test_edit( self ):
+    #     fm = get_fm_server()
+    #     fm.layout = 'test_table_edit'
+    #     resultset = fm.do_find( value__lt=0.5 )
+    #     r = tuple(resultset)
+    #     self.assertEqual( len(r), 2 )
 
 
 
