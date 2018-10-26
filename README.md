@@ -80,8 +80,10 @@ $ pip install pyfilemaker2
 ---
 
 ### 4. CHANGES
-0.1.10: - bug fix with the stream argument.
+0.1.10: bug fix with the stream argument.
+
 0.1.9: - adding timezone support as FM datetime object are naive datetime
+       
        - changed the way the options are passed to FmServer object
          so that a subclass with default
          parameters can be used.
