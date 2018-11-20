@@ -16,8 +16,8 @@ base = os.path.dirname( __file__ )
 
 TEST_USER = 'xml'
 TEST_PASSWORD = 'xml1234'
-TEST_URL = 'https://{}:{}@essaim-norma.etat-de-vaud.ch/'.format(TEST_USER, TEST_PASSWORD)
-TEST_FILE = 'TestJeremie'
+TEST_URL = 'https://{}:{}@test.hostname.fms/'.format(TEST_USER, TEST_PASSWORD)
+TEST_FILE = 'TestFile'
 
 # import urllib3
 # urllib3.disable_warnings()

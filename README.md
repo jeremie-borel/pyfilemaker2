@@ -16,8 +16,9 @@ Old project urls:
 
 1. What is pyfilemaker2 ?
 2. Requirements
-3. How to install PyFileMaker
-4. Changes
+3. How to install pyfilemaker2
+4. Documentation
+5. Changes
 
 -------------------------------------------------------------------------------
 ### 1. WHAT IS pyfilemaker2?
@@ -47,12 +48,12 @@ pyfilemaker2 implements the following additional features:
 
 ### 2. REQUIREMENTS
 
-At the time of the development (2018), the pyfilemaker2 is using:
+At the time of the development (2018), pyfilemaker2 is using:
 
 ```
-requests==2.19.1
-lxml==4.2.5
-future==0.16.0
+requests>=2.19.1
+lxml>=4.2.5
+future=>0.16.0
 ```
 
 The test suite also requires
@@ -79,7 +80,21 @@ $ pip install pyfilemaker2
 
 ---
 
-### 4. CHANGES
+### 4. DOC
+
+Their is no external doc but the function in the FmServer class
+have extensive docstring. Moreover an FmServer object is likely the unique 
+thing one will need to import from this package.
+
+### 5. CHANGES
+0.1.12: 
+
+- improving this readme
+
+- bug fix in the FmServer.fetched_records_number function
+
+0.1.11: enforcing stream=True by default as FMS now requires it.
+
 0.1.10: bug fix with the stream argument.
 
 0.1.9: 

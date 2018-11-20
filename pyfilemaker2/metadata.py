@@ -23,6 +23,8 @@ from .caster import (
     FM_TIMESTAMP,
 )
 
+__all__ = ['FmMeta','metadata_parser', 'FmFieldBase', 'FmFieldData']
+
 @python_2_unicode_compatible
 class FmMeta(object):
     """

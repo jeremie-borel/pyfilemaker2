@@ -1,5 +1,7 @@
 from collections import Counter
 
+__all__ = ['MutableDict',]
+
 class MutableDict(dict):
     """
     Thin wrapper around dict that tracks keys that are set more than once.

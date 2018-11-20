@@ -11,6 +11,8 @@ from .metadata import (
     FmMeta,
 )
 
+__all__ = ['parse',]
+
 def parse( stream, fm_meta=None, only_meta=False ):
     """
     Generator that parses an FMS xml response.

@@ -173,14 +173,20 @@ class FmServer(object):
     def do_script_after(self, func, func_kwargs={}, script_name='', params=None):
         raise NotImplementedError("not yet implemented")
 
-    def fetched_records_number( self ):
+    def fetched_records_number( self, safe=True ):
         """Returns the number of result in the resultset
         
         ATM available only once the first result has been parsed, not before.
         """
-        return self.fm_meta.fetch_count
+        try:
+            return self.fm_meta.fetch_count
+        except AttributeError:
+            if safe:
+                return -1
+            raise AttributeError("Resultset has not been evaluated yet.")
+        
 
-    def total_records_number( self ):
+    def total_records_number( self, safe=True ):
         """Returns the number of result that would be returned in a 
         do_find_all request.
 
@@ -190,7 +196,13 @@ class FmServer(object):
           fm.do_find_any()     # queries and parses the resultset
           fm.total_records_number()
         """
-        return self.fm_meta.total_count
+        try:
+            return self.fm_meta.total_count
+        except AttributeError:
+            if safe:
+                return -1
+            raise AttributeError("Resultset has not been evaluated yet.")
+
 
     def do_find_query(self, query_dict, skip=None, max=None, sort=[], paginate=None ):
         """
