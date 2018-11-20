@@ -1,0 +1,15 @@
+
+
+
+# build the source:
+python3 setup.py sdist
+
+# upload the source
+# test repo
+twine upload --repository-url https://test.pypi.org/legacy/ dist/*
+
+# legagcy repo
+twine upload dist/*
+
+# install from test repo:
+pip --no-cache install -U --extra-index-url https://testpypi.python.org/pyp pyfilemaker2

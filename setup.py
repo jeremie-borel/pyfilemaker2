@@ -7,10 +7,10 @@ with open("README.md", "r") as fh:
 
 setup(
     name='pyfilemaker2',
-    version="0.1.12",
+    version="0.1.12.4",
     description='Python Object Wrapper for FileMaker Server XML Interface',
     long_description=long_description,
-    long_description_content_type="text/markdown",
+    # long_description_content_type="text/markdown",
     classifiers=[
         'Environment :: Console',
         'Intended Audience :: Developers',
@@ -30,7 +30,7 @@ setup(
     platforms = ['any'],
     packages=['pyfilemaker2', 'pyfilemaker2.errors', 'pyfilemaker2.tests', 'pyfilemaker2.tests.ressources'],
     package_data={
-        '': ['*.xml'],
+        '': ['*.md'],
     },
     install_requires=['requests','lxml','future'],
 )
