@@ -1,5 +1,6 @@
 # -*- coding: utf8 -*-
 from __future__ import unicode_literals, absolute_import, print_function
+
 import unittest, datetime, pytz
 
 from pyfilemaker2.metadata import FmMeta
@@ -44,6 +45,19 @@ class TestBackCast(unittest.TestCase):
         bc.tz = tz
         # naive must stay naive :/
         self.assertEqual( bc( field=None, value=d ), '09/01/2018 11:54:07' )
+
+
+    def test_backcast_types( self ):
+        tests = [
+            (9,'9'),
+            ('abc','abc'),
+            (u'abc','abc'),
+            (b'abc','abc'),
+            (u'en été'.encode('utf8'),'en été'),
+        ]
+        bc = BackCast()
+        for value,result in tests:
+            self.assertEqual( bc( field=None, value=value ), result )
 
 
 if __name__ == '__main__':
