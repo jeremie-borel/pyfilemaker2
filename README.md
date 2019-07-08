@@ -1,5 +1,5 @@
 # PyFileMaker - Integrating FileMaker and Python
-* (c) 2016-2018 Jeremie Borel
+* (c) 2016-2019 Jeremie Borel
 * (c) 2014-2016 Marcin Kawa, kawa.macin@gmail.com
 * (c) 2006-2008 Klokan Petr Pridal, klokan@klokan.cz
 * (c) 2002-2006 Pieter Claerhout, pieter@yellowduck.be
@@ -83,10 +83,22 @@ $ pip install pyfilemaker2
 ### 4. DOC
 
 Their is no external doc but the function in the FmServer class
-have extensive docstring. Moreover an FmServer object is likely the unique 
-thing one will need to import from this package.
+have extensive docstring. Starts in particular with the server.py file.
+Moreover an FmServer object is likely the unique thing one will need 
+to import from this package.
 
 ### 5. CHANGES
+
+0.1.14:
+
+- Minor change in FmServer.get_file to allow downloading of 
+  badly formatted filenames.
+
+0.1.13:
+
+- changed the BackCast function so that query parameters may be
+  bytestring 
+
 0.1.12: 
 
 - improving this readme
