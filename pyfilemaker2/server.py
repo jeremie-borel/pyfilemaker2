@@ -114,7 +114,7 @@ class FmServer(object):
         self.do_view()
         return tuple( self.fm_meta.fields.keys() )
 
-    def get_file( self, file_xml_uri ):
+    def get_file(self, file_xml_uri, canonical_filename=True):
         """Fetches container data from an FM server
         
         e.g. on file mydb.fmp12, a layout 'my_layout' has a field 'join'
@@ -126,12 +126,20 @@ class FmServer(object):
             out = open( "{}.{}".format(name, extension), 'w' )
             out.write( data )
             out.close()
+
+        if :canonical_filename: is True, the filename and file extension must match
+        the regexp pattern below. Otherwise filename and file_extension are
+        empty strings.
         """
-        # added % and , chars in the list of allowed chars so that html 
-        # special char are possible in the file name. (19.1.2016, blj)
-        find = re.match('/fmi/xml/cnt/(?P<name>[,%\w\d.-]+)\.(?P<ext>[\w]+)[?]-', file_xml_uri) 
-        file_name = find.group('name')
-        file_extension = find.group('ext')
+        file_name = ""
+        file_extension = ""
+        if canonical_filename:
+            find = re.match('/fmi/xml/cnt/(?P<name>[,%\w\d.-]+)\.(?P<ext>[\w]+)[?]-', file_xml_uri)
+            if not find:
+                raise FmError(code=700)
+
+            file_name = find.group('name')
+            file_extension = find.group('ext')
         file_binary = self._do_request(is_file=True, query=file_xml_uri)
         return (file_name, file_extension, file_binary)
 
