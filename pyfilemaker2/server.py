@@ -473,12 +473,12 @@ class FmServer(object):
 
             for key in what.changed_keys():
                 if isinstance( what[key], MutableDict ):
-                    m = "Can't handle yet the editing of related "
-                    "paramters '{}' (e.g table2::fieldX). Skipping it.".format(key)
+                    m = ("Can't handle yet the editing of related "
+                    "paramters '{}' (e.g table2::fieldX).".format(key))
                     raise ValueError(m)
                 if isinstance( what[key], (list,tuple,set) ):
-                    m = "Can't set multivalue field '{}' this way. See "
-                    "the doc of do_edit for a workaround".format(key)
+                    m = ("Can't set multivalue field '{}' this way. See "
+                    "the doc of do_edit for a workaround".format(key))
                     raise ValueError(m)
 
                 query.add_param( name=key, value=what[key], parse_operator=False )
@@ -717,6 +717,15 @@ class FmQuery(object):
         if not self.back_cast:
             bc = self.fm_server.options['back_cast_class']
             self.back_cast = bc( fm_server=self.fm_server )
+        
+        # if isinstance(value, (tuple, list)):
+        #     for v in value:
+        #         casted_v = self.back_cast( field=field,value=v )
+        #         self._params.append( (field, casted_value) )
+        #     if op:
+        #         raise ValueError("Multivalue fields cannot have an "
+        #                          "operator. Field:{}".foramt(field))
+        # else:
         casted_value = self.back_cast( field=field,value=value )
 
         self._params.append( (field, casted_value) )
