@@ -2,6 +2,7 @@
 from __future__ import unicode_literals, absolute_import, print_function
 
 import datetime
+import numbers
 
 # from builtins import str
 
@@ -102,13 +103,19 @@ class BackCast(object):
 
         elif isinstance( value, datetime.date ):
             return value.strftime( self.__class__.FM_DEFAULT_DATE )
+
         elif isinstance( value, datetime.time ):
             return value.strftime( self.__class__.FM_DEFAULT_TIME )
-        try:
-            # trying to decode byte string
+
+        elif isinstance( value, bytes ):
             return value.decode('utf8')
-        except AttributeError:
-            return str(value)
+
+        elif isinstance( value, numbers.Number ):
+            return value
+
+        return str(value)
+
+
 
 default_cast_map = {
     FM_NUMBER : NumberCast,
