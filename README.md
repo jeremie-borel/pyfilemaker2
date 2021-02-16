@@ -1,5 +1,5 @@
 # PyFileMaker - Integrating FileMaker and Python
-* (c) 2016-2019 Jeremie Borel
+* (c) 2016-2021 Jeremie Borel
 * (c) 2014-2016 Marcin Kawa, kawa.macin@gmail.com
 * (c) 2006-2008 Klokan Petr Pridal, klokan@klokan.cz
 * (c) 2002-2006 Pieter Claerhout, pieter@yellowduck.be
@@ -40,7 +40,7 @@ pyfilemaker2 implements the following additional features:
 - meant to be thread safe, though I can't claim to be an expert on the subject...
 - More consistent and finer control on the way data types are cast when reading or 
   writting FM records (in particular dates, datetimes and float objects)
-- python 2.7 and python 3.6 compatible (most probably other 3.x versions too but not tested)
+- python 3 compatible
 - improved test battery
 - 
 
@@ -48,12 +48,11 @@ pyfilemaker2 implements the following additional features:
 
 ### 2. REQUIREMENTS
 
-At the time of the development (2018), pyfilemaker2 is using:
+At the time of the development (2021), pyfilemaker2 is using:
 
 ```
-requests>=2.19.1
-lxml>=4.2.5
-future=>0.16.0
+requests=2.25.1
+lxml=4.6.2
 ```
 
 The test suite also requires
@@ -63,7 +62,7 @@ mock
 pytz
 ```
 
-The code has been developped on Max OSX 10.13 and is used in production on 
+The code has been developped on Max OSX 10.15 and is used in production on 
 debian jessie. Other plateforms have not been tested.
 
 You will also need a FileMaker server with the XML enabled of course.
@@ -82,12 +81,20 @@ $ pip install pyfilemaker2
 
 ### 4. DOC
 
-Their is no external doc but the function in the FmServer class
-have extensive docstring. Starts in particular with the server.py file.
-Moreover an FmServer object is likely the unique thing one will need 
-to import from this package.
+Their is no external doc but the function in the FmServer class have extensive
+docstring. Starts in particular with the server.py file. Moreover an FmServer
+object is likely the unique thing one will need to import from this package.
 
 ### 5. CHANGES
+
+0.2.1:
+
+- Bugfix on import in test_server.py
+
+
+0.2.0:
+
+- No longer support python2.7 as the `future` library was removed
 
 0.1.14:
 

@@ -11,7 +11,7 @@ base = os.path.dirname(__file__)
 
 try:
     # define in this module the constants required to access the FM database
-    from ressources.fms_test_server import (
+    from pyfilemaker2.tests.ressources.fms_test_server import (
         TEST_USER,
         TEST_PASSWORD,
         TEST_SERVER,

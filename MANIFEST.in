@@ -1,2 +1,3 @@
-include README.md
-recursive-include pyfilemake2 *
+global-include *.md
+global-include *.py
+global-exclude fms_test_server.py
