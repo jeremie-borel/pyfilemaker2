@@ -1,7 +1,7 @@
 *.pyc
 build/
 dist/
-PyFileMaker.egg-info/
+pyfilemaker2.egg-info/
 .vscode/
 *~
 .DS_Store
