@@ -42,7 +42,6 @@ pyfilemaker2 implements the following additional features:
   writting FM records (in particular dates, datetimes and float objects)
 - python 3 compatible
 - improved test battery
-- 
 
 ----
 

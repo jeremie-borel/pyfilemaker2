@@ -21,8 +21,8 @@ class FmServer():
     """
     Main class to interact with FM server instances.
 
-    Note that all the static arguments can also be
-    passed in the **kwargs from the FmServder.__init__'s method.
+    Note that all the static arguments can also be passed in the **kwargs from
+    the FmServder.__init__'s method.
     """
     meta_class = FmMeta
     cast_map = None
@@ -85,7 +85,6 @@ class FmServer():
 
     def get_db_names(self):
         """Returns the list of databases available through xml"""
-
         query = FmQuery(action='-dbnames', fm_server=self)
         stream = self._do_request(query)
         return tuple(v['DATABASE_NAME'] for v in stream)
@@ -470,7 +469,7 @@ class FmServer():
             for key in what.changed_keys():
                 if isinstance(what[key], MutableDict):
                     m = (
-                        "Can't handle yet the editing of related paramters '{}' (e.g table2::fieldX). Skipping it."
+                        "Can't handle yet the editing of related parameters '{}' (e.g table2::fieldX). Skipping it."
                         .format(key)
                     )
                     raise ValueError(m)
@@ -523,11 +522,10 @@ class FmServer():
             return _paginate(fm_server=self, query=query, page_size=paginate)
 
         if self.debug:
-            # log.info("FmServer({})".format(url))
-            print("FmServer({})".format(url))
+            log.info("FmServer({})".format(url))
             if not is_file:
                 for item in query.request:
-                    print("  ", item)
+                    log.info("  {}".format(item))
 
         resp = requests.get(
             url=url,
@@ -554,11 +552,9 @@ class FmServer():
 
 
 class FmQuery():
-    """This class is internal to FmServer. It is used to
-    define the arguements that can or must be passed with a
-    given action and it formats and casts theses arguments before
-    building a request url.
-    """
+    """This class is internal to FmServer. It is used to define the arguements
+    that can or must be passed with a given action and it formats and casts
+    theses arguments before building a request url."""
     _scripts = ['-script', '–script.param', '-script.prefind', '-script.prefind.param', '-script.presort', '–script.presort.param']
     _layr = ['-lay.response']
     _finds = ['-recid', '-lop', '-op', '-max', '-skip', '-sortorder', '-sortfield']
