@@ -1,9 +1,10 @@
 *.pyc
 build/
 dist/
-PyFileMaker.egg-info/
+pyfilemaker2.egg-info/
 .vscode/
 *~
 .DS_Store
 dummy.py
 __pycache__
+pyfilemaker2/tests/ressources/fms_test_server.py

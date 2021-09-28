@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf8 -*-
-from __future__ import unicode_literals, absolute_import, print_function
 
 from lxml import etree
 
@@ -11,29 +10,29 @@ from .metadata import (
     FmMeta,
 )
 
-__all__ = ['parse',]
+__all__ = ['parse']
 
-def parse( stream, fm_meta=None, only_meta=False ):
+
+def parse(stream, fm_meta=None, only_meta=False):
     """
     Generator that parses an FMS xml response.
 
     :fm_meta: FmMeta instance or None.
 
-    :stream: is either a file-like objects (bytestring for python2.7, do not use codecs.open) 
+    :stream: is either a file-like objects (bytestring for python2.7, do not use codecs.open)
     or a response.raw attribute from a request query.
     """
     if not fm_meta:
         fm_meta = FmMeta()
 
     tree = etree.iterparse(
-            stream,
-            # events=("start", "end"),
-            events=('start-ns','start', 'end',),
+        stream,
+        # events=("start", "end"),
+        events=('start-ns', 'start', 'end'),
     )
 
     record = fm_meta.get_record_class()()
-    table = None # related table
-    field_name = None
+    table = None  # related table
     relatedset = []
     data_buffer = []
     decode = fm_meta.decode_data
@@ -50,16 +49,16 @@ def parse( stream, fm_meta=None, only_meta=False ):
             if tag == 'data':
                 value = decode(elem.text)
                 if caster:
-                    data_buffer.append( caster.caster(value) )
+                    data_buffer.append(caster.caster(value))
 
             elif tag == 'field':
-                raw_name = fm_meta.decode_attrs( elem.attrib.get('name', '') ) or None
+                raw_name = fm_meta.decode_attrs(elem.attrib.get('name', '')) or None
                 try:
                     field = fm_meta.get_fm_field(
                         raw_name=raw_name,
                         table=table
                     )
-                    field.set_value( record=record, data_list=data_buffer )
+                    field.set_value(record=record, data_list=data_buffer)
                 except KeyError:
                     pass
                 data_buffer = []
@@ -90,17 +89,17 @@ def parse( stream, fm_meta=None, only_meta=False ):
                     if fm_meta.error == 401:
                         break
                     raise FmError(code=fm_meta.error)
-            
+
             elif tag == 'datasource':
-                # <datasource database="TestJeremie" 
-                # date-format="MM/dd/yyyy" 
-                # layout="layout1" 
-                # table="table1" 
-                # time-format="HH:mm:ss" 
-                # timestamp-format="MM/dd/yyyy HH:mm:ss" 
+                # <datasource database="TestJeremie"
+                # date-format="MM/dd/yyyy"
+                # layout="layout1"
+                # table="table1"
+                # time-format="HH:mm:ss"
+                # timestamp-format="MM/dd/yyyy HH:mm:ss"
                 # total-count="4"/>
                 fm_meta.database = dict(elem.attrib)
-                dict_formats = fm_meta.parse_fm_dates_formats( formats=fm_meta.database )
+                dict_formats = fm_meta.parse_fm_dates_formats(formats=fm_meta.database)
                 fm_meta.date_pattern = dict_formats['date']
                 fm_meta.time_pattern = dict_formats['time']
                 fm_meta.timestamp_pattern = dict_formats['timestamp']
@@ -109,16 +108,16 @@ def parse( stream, fm_meta=None, only_meta=False ):
                 fm_meta.table = fm_meta.database['table']
 
             elif tag == 'metadata':
-                metadata_parser( node=elem, fm_meta=fm_meta )
+                metadata_parser(node=elem, fm_meta=fm_meta)
                 if only_meta:
                     break
 
         elif event == 'start':
-            tag = fm_meta.get_tagname( elem )
+            tag = fm_meta.get_tagname(elem)
 
             if tag == 'field':
                 try:
-                    caster = fm_meta.get_fm_field( 
+                    caster = fm_meta.get_fm_field(
                         raw_name=fm_meta.decode_attrs(elem.attrib['name']),
                         table=table
                     )
@@ -131,11 +130,11 @@ def parse( stream, fm_meta=None, only_meta=False ):
                 relatedset = record[table]
                 super_record = record
                 record = fm_meta.get_record_class()()
-            
+
             elif tag == 'resultset':
                 try:
-                    _count = int( elem.attrib['count'] )
-                    fetch_size = int( elem.attrib['fetch-size'] )
+                    _count = int(elem.attrib['count'])
+                    fetch_size = int(elem.attrib['fetch-size'])
                 except (ValueError, TypeError, KeyError):
                     _count = 0
                     fetch_size = 0
