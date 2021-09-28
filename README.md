@@ -86,6 +86,10 @@ object is likely the unique thing one will need to import from this package.
 
 ### 5. CHANGES
 
+0.2.2:
+
+- BackCast now cast numbers correctly
+
 0.2.1:
 
 - Bugfix on import in test_server.py
