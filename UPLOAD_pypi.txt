@@ -2,7 +2,8 @@
 
 
 # build the source:
-python3 setup.py sdist
+python setup.py clean --all
+python setup.py build
 
 # upload the source
 # test repo

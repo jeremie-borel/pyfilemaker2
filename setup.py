@@ -8,7 +8,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name='pyfilemaker2',
-    version="0.2.1",
+    version="0.2.2",
     description='Python Object Wrapper for FileMaker Server XML Interface',
     long_description=long_description,
     long_description_content_type="text/markdown",
