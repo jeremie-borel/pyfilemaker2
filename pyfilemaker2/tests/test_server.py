@@ -75,7 +75,8 @@ class TestServerOffline(unittest.TestCase):
             'tableC',
             'tableA',
             'test_table1',
-            'non âscïi Täßle ñame'
+            'non âscïi Täßle ñame',
+            'test_rub_calc',
         ]))
 
     @mock.patch.object(requests, 'get')
@@ -125,6 +126,20 @@ class TestServerOnline(unittest.TestCase):
         resultset = fm.do_find(stamp__gt=date)
         r = tuple(resultset)
         self.assertEqual(r[0]['id'], 3)
+
+    def test_write_with_readonly_data(self):
+        fm = get_fm_server()
+        fm.layout = 'test_rub_calc'
+        resultset = fm.do_find(a_texte='un', b_nombre=1)
+        r = tuple(resultset)
+        item = r[0]
+        test_read = item['c_concat']
+        self.assertEqual(test_read, 'un1')
+
+        item['a_texte'] = 'voila'
+        fm.do_edit(item)
+        item['a_texte'] = 'un'
+        fm.do_edit(item)
 
     # def test_edit(self):
     #     fm = get_fm_server()
