@@ -5,6 +5,8 @@
 python setup.py clean --all
 python setup.py build
 
+pip install twine
+
 # upload the source
 # test repo
 twine upload --repository-url https://test.pypi.org/legacy/ dist/*
