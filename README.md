@@ -80,9 +80,10 @@ $ pip install pyfilemaker2
 
 ### 4. DOC
 
-Their is no external doc but the function in the FmServer class have extensive
-docstring. Starts in particular with the server.py file. Moreover an FmServer
-object is likely the unique thing one will need to import from this package.
+There are no external docs but the function in the FmServer class have
+extensive docstring. Starts in particular with the server.py file. Moreover an
+FmServer object is likely the unique thing one will need to import from this
+package.
 
 ### 5. CHANGES
 
