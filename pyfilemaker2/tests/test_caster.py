@@ -39,7 +39,7 @@ class TestBackCast(unittest.TestCase):
 
     def test_backcast_types(self):
         tests = [
-            (9, '9'),
+            (9, 9),
             ('abc', 'abc'),
             (u'abc', 'abc'),
             (b'abc', 'abc'),
