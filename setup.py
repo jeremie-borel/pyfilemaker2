@@ -28,7 +28,11 @@ setup(
     download_url='https://github.com/jeremie-borel/pyfilemaker2/',
     license='http://www.opensource.org/licenses/bsd-license.php',
     platforms = ['any'],
-    packages=['pyfilemaker2', 'pyfilemaker2.errors', 'pyfilemaker2.tests'],
+    packages=find_packages(
+        where='pyfilemaker2',
+        include=['pyfilemaker2', 'pyfilemaker2', 'pyfilemaker2.tests'],
+        exclude=['*']
+    ),
     include_package_data=True,
     package_data={
         '': ['*.md'],
