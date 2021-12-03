@@ -2,9 +2,8 @@
 # running unittest:
 python -m unittest discover
 
-
-# compiling a package:
-# as per https://python-packaging.readthedocs.io/en/latest/minimal.html
-rm -rf build dist pyfilemaker2.egg-info/
+# upload on pypi (update setup.py)
+pip install twine
+python setup.py clean --all
 python setup.py sdist
-python setup.py sdist upload
+python -m twine upload --repository pypi dist/*
