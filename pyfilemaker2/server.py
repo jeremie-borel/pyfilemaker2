@@ -126,7 +126,10 @@ class FmServer():
         file_name = ""
         file_extension = ""
         if canonical_filename:
-            find = re.match('/fmi/xml/cnt/(?P<name>[,%\w\d.-]+)\.(?P<ext>[\w]+)[?]-', file_xml_uri)
+            find = re.match(
+                '/fmi/xml/cnt/(?P<name>[,%\w\d.-]+)\.(?P<ext>[\w]+)[?]-',
+                file_xml_uri,
+            )
             if not find:
                 raise FmError(code=700)
 
@@ -273,23 +276,27 @@ class FmServer():
                 # all the queries that will be ANDed
                 sub_query_list = []
                 for sub_key, sub_value in value.items():
-                    sub_query_list.append('q{}'.format(count))
-                    query_values.append(['-q{}'.format(count), sub_key])
-                    query_values.append(['-q{}.value'.format(count), sub_value])
+                    sub_query_list.append(f'q{count}')
+                    query_values.append([f'-q{count}', sub_key])
+                    query_values.append([f'-q{count}.value', sub_value])
                     count += 1
-                query_list.append('{}({})'.format(neg, ",".join(sub_query_list)))
+                query_list.append('{}({})'.format(
+                    neg,
+                    ",".join(sub_query_list)
+                ))
 
             # the value is a tuple, do an OR or all the arguments
             elif isinstance(value, (tuple, list, set)):
                 for sub_value in value:
-                    query_list.append('{}(q{})'.format(neg, count))
-                    query_values.append(['-q{}'.format(count), key])
-                    query_values.append(['-q{}.value'.format(count), sub_value])
+                    query_list.append(f'{neg}(q{count})')
+                    query_values.append([f'-q{count}', key])
+                    query_values.append(
+                        [f'-q{count}.value', sub_value])
                     count += 1
             else:
-                query_list.append('{}(q{})'.format(neg, count))
-                query_values.append(['-q{}'.format(count), key])
-                query_values.append(['-q{}.value'.format(count), value])
+                query_list.append(f'{neg}(q{count})')
+                query_values.append([f'-q{count}', key])
+                query_values.append([f'-q{count}.value', value])
                 count += 1
 
         query = FmQuery(action='-findquery', fm_server=self)
@@ -480,7 +487,11 @@ class FmServer():
                     )
                     raise ValueError(m)
 
-                query.add_param(name=key, value=what[key], parse_operator=False)
+                query.add_param(
+                    name=key,
+                    value=what[key],
+                    parse_operator=False,
+                )
         elif isinstance(what, dict):
             # if what is a dict, push all arguments into kwargs as
             # kwargs values must take precedence (could be changed one day ?)
@@ -555,9 +566,11 @@ class FmQuery():
     """This class is internal to FmServer. It is used to define the arguements
     that can or must be passed with a given action and it formats and casts
     theses arguments before building a request url."""
-    _scripts = ['-script', '–script.param', '-script.prefind', '-script.prefind.param', '-script.presort', '–script.presort.param']
+    _scripts = ['-script', '–script.param', '-script.prefind',
+                '-script.prefind.param', '-script.presort', '–script.presort.param']
     _layr = ['-lay.response']
-    _finds = ['-recid', '-lop', '-op', '-max', '-skip', '-sortorder', '-sortfield']
+    _finds = ['-recid', '-lop', '-op', '-max',
+              '-skip', '-sortorder', '-sortfield']
 
     actions = {
         '-dbnames': {
@@ -693,7 +706,10 @@ class FmQuery():
             self.set_max(max)
         if lop:
             if lop.lower() not in ['and', 'or']:
-                raise FmError('Unsupported logical operator (not one of "and" or "or").')
+                raise FmError(
+                    'Unsupported logical operator '
+                    '(not one of "and" or "or").'
+                )
             self.args['-lop'] = lop.lower()
 
     def add_args(self, name, value):
@@ -742,7 +758,9 @@ class FmQuery():
 
             value = args.pop(key)
             if not value:
-                raise ValueError("A required argument ({}) is empty ({})".format(key, value))
+                raise ValueError(
+                    f"A required argument ({key}) is empty ({value})"
+                )
             request.append((key, value))
 
         if self.grammar['params']:
