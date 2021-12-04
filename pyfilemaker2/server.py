@@ -5,12 +5,16 @@ import requests
 import logging
 import copy
 import re
+import queue
+import threading
+import time
 
 from .metadata import FmMeta
 from .errors import FmError
 from .parser import parse
 from .data import MutableDict
 from .caster import BackCast
+
 
 log = logging.getLogger(__name__)
 
@@ -34,6 +38,8 @@ class FmServer():
         'timeout': 25,
     }
     server_timezone = None
+    # see _threaded_paginate function below.
+    threaded_paginate = True
 
     def __init__(
         self,
@@ -69,7 +75,8 @@ class FmServer():
             'back_cast_class',
             'cast_map',
             'request_kwargs',
-            'server_timezone'
+            'server_timezone',
+            'threaded_paginate',
         )
         for key in optkeys:
             if key in kwargs:
@@ -126,7 +133,10 @@ class FmServer():
         file_name = ""
         file_extension = ""
         if canonical_filename:
-            find = re.match('/fmi/xml/cnt/(?P<name>[,%\w\d.-]+)\.(?P<ext>[\w]+)[?]-', file_xml_uri)
+            find = re.match(
+                '/fmi/xml/cnt/(?P<name>[,%\w\d.-]+)\.(?P<ext>[\w]+)[?]-',
+                file_xml_uri,
+            )
             if not find:
                 raise FmError(code=700)
 
@@ -273,23 +283,27 @@ class FmServer():
                 # all the queries that will be ANDed
                 sub_query_list = []
                 for sub_key, sub_value in value.items():
-                    sub_query_list.append('q{}'.format(count))
-                    query_values.append(['-q{}'.format(count), sub_key])
-                    query_values.append(['-q{}.value'.format(count), sub_value])
+                    sub_query_list.append(f'q{count}')
+                    query_values.append([f'-q{count}', sub_key])
+                    query_values.append([f'-q{count}.value', sub_value])
                     count += 1
-                query_list.append('{}({})'.format(neg, ",".join(sub_query_list)))
+                query_list.append('{}({})'.format(
+                    neg,
+                    ",".join(sub_query_list)
+                ))
 
             # the value is a tuple, do an OR or all the arguments
             elif isinstance(value, (tuple, list, set)):
                 for sub_value in value:
-                    query_list.append('{}(q{})'.format(neg, count))
-                    query_values.append(['-q{}'.format(count), key])
-                    query_values.append(['-q{}.value'.format(count), sub_value])
+                    query_list.append(f'{neg}(q{count})')
+                    query_values.append([f'-q{count}', key])
+                    query_values.append(
+                        [f'-q{count}.value', sub_value])
                     count += 1
             else:
-                query_list.append('{}(q{})'.format(neg, count))
-                query_values.append(['-q{}'.format(count), key])
-                query_values.append(['-q{}.value'.format(count), value])
+                query_list.append(f'{neg}(q{count})')
+                query_values.append([f'-q{count}', key])
+                query_values.append([f'-q{count}.value', value])
                 count += 1
 
         query = FmQuery(action='-findquery', fm_server=self)
@@ -480,7 +494,11 @@ class FmServer():
                     )
                     raise ValueError(m)
 
-                query.add_param(name=key, value=what[key], parse_operator=False)
+                query.add_param(
+                    name=key,
+                    value=what[key],
+                    parse_operator=False,
+                )
         elif isinstance(what, dict):
             # if what is a dict, push all arguments into kwargs as
             # kwargs values must take precedence (could be changed one day ?)
@@ -519,7 +537,10 @@ class FmServer():
                 raise AttributeError(
                     "One cannot specify a skip or a max value in pagination mode."
                 )
-            return _paginate(fm_server=self, query=query, page_size=paginate)
+            if self.options['threaded_paginate']:
+                return _threaded_paginate(fm_server=self, query=query, page_size=paginate)
+            else:
+                return _paginate(fm_server=self, query=query, page_size=paginate)
 
         if self.debug:
             log.info("FmServer({})".format(url))
@@ -555,9 +576,11 @@ class FmQuery():
     """This class is internal to FmServer. It is used to define the arguements
     that can or must be passed with a given action and it formats and casts
     theses arguments before building a request url."""
-    _scripts = ['-script', '–script.param', '-script.prefind', '-script.prefind.param', '-script.presort', '–script.presort.param']
+    _scripts = ['-script', '–script.param', '-script.prefind',
+                '-script.prefind.param', '-script.presort', '–script.presort.param']
     _layr = ['-lay.response']
-    _finds = ['-recid', '-lop', '-op', '-max', '-skip', '-sortorder', '-sortfield']
+    _finds = ['-recid', '-lop', '-op', '-max',
+              '-skip', '-sortorder', '-sortfield']
 
     actions = {
         '-dbnames': {
@@ -693,7 +716,10 @@ class FmQuery():
             self.set_max(max)
         if lop:
             if lop.lower() not in ['and', 'or']:
-                raise FmError('Unsupported logical operator (not one of "and" or "or").')
+                raise FmError(
+                    'Unsupported logical operator '
+                    '(not one of "and" or "or").'
+                )
             self.args['-lop'] = lop.lower()
 
     def add_args(self, name, value):
@@ -742,7 +768,9 @@ class FmQuery():
 
             value = args.pop(key)
             if not value:
-                raise ValueError("A required argument ({}) is empty ({})".format(key, value))
+                raise ValueError(
+                    f"A required argument ({key}) is empty ({value})"
+                )
             request.append((key, value))
 
         if self.grammar['params']:
@@ -779,3 +807,101 @@ def _paginate(fm_server, query, page_size, current=0):
 
     for item in _paginate(fm_server, query, page_size, current=current+page_size):
         yield item
+
+
+def _threaded_paginate(fm_server, query, page_size):
+    """
+    Instead of 'classic' pagination, we launch a thread that only fetchs the data
+    and fills a queue.Queue objects. The main loop consumes the queue and looks
+    like an iterator over the returned item.
+
+    The advantage comes when processing the objects retrieved from FMS takes some IO
+    time (like storing them in a DB.). In this case, the fetching can occur in parallel.
+    Note that for light FMS objects this pagination may be worse than the classical one.
+
+    Note that the queries fetching the FMS objects are still done one after the other 
+    as it is launched by the same thread. The FIFO queue ensures the processing order
+    is preserved.
+    """
+
+    def _data_fetcher(fm_server, query, page_size, current, share_mem):
+        """"
+        Procuces a recursive call to do_request for the next :page_size: object and 
+        always fills the result into share_mem['data'] then notifies the waiting threads.
+        """
+        # simply copy the fm_server objects and query.
+        fm_server_copy = copy.copy(fm_server)
+        query = copy.copy(query)
+        query.set_skip(current)
+        query.set_max(page_size)
+        for item in fm_server_copy._do_request(query, is_file=False, paginate=None):
+            fm_server.fm_meta = fm_server_copy.fm_meta
+            # push data into queue.Queue object
+            share_mem['data'].put(item)
+
+        N = fm_server_copy.fetched_records_number()
+        share_mem['total'] += N
+        if N < page_size:
+            # flags the fact that we are done processing.
+            share_mem['end-of-job'] = True
+
+            # wait here until all data are processed in the queue
+            share_mem['data'].join()
+            log.info("Downloaded {} items from FMS {}:{}".format(
+                share_mem['total'],
+                fm_server_copy.db,
+                fm_server_copy.layout,
+            ))
+            return
+
+        del fm_server_copy
+        # recursive call for the next :page_size: objects
+        _data_fetcher(
+            fm_server=fm_server,
+            query=query,
+            page_size=page_size,
+            current=current+page_size,
+            share_mem=share_mem,
+        )
+
+    def _consumer_iterator(share_mem):
+        count = 0
+        while True:
+            try:
+                # blocking call to get.
+                item = share_mem['data'].get(timeout=1)
+                share_mem['data'].task_done()
+            except queue.Empty:
+                if share_mem['end-of-job']:
+                    return
+                else:
+                    continue
+            count += 1
+            # we add a tiny time.sleep every 70% of paginate
+            # so that the fetching thread has a chance to 
+            # start fetching the data.
+            if count > 0.7*share_mem['paginate']:
+                time.sleep(1e-4)
+                count = 0
+            yield item
+
+    shared_obj = {
+        'data': queue.Queue(),
+        'end-of-job': False,
+        'paginate': page_size,
+        'total': 0,
+    }
+    t1 = threading.Thread(
+        target=_data_fetcher,
+        kwargs={
+            'fm_server': fm_server,
+            'query': query,
+            'page_size': page_size,
+            'current': 0,
+            'share_mem': shared_obj,
+        },
+        daemon=True,
+    )
+    t1.start()
+
+    return _consumer_iterator(share_mem=shared_obj)

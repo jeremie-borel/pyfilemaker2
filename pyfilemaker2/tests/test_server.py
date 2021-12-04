@@ -76,7 +76,6 @@ class TestServerOffline(unittest.TestCase):
             'tableA',
             'test_table1',
             'non âscïi Täßle ñame',
-            'test_rub_calc',
         ]))
 
     @mock.patch.object(requests, 'get')
@@ -138,6 +137,10 @@ class TestServerOnline(unittest.TestCase):
 
         item['a_texte'] = 'voila'
         fm.do_edit(item)
+
+        resultset = fm.do_find(a_texte='voila', b_nombre=1)
+        r = tuple(resultset)
+        item = r[0]
         item['a_texte'] = 'un'
         fm.do_edit(item)
 
