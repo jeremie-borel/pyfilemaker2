@@ -5,12 +5,15 @@ import requests
 import logging
 import copy
 import re
+import queue
+import threading
 
 from .metadata import FmMeta
 from .errors import FmError
 from .parser import parse
 from .data import MutableDict
 from .caster import BackCast
+
 
 log = logging.getLogger(__name__)
 
@@ -34,6 +37,7 @@ class FmServer():
         'timeout': 25,
     }
     server_timezone = None
+    threaded_paginate = True
 
     def __init__(
         self,
@@ -69,7 +73,8 @@ class FmServer():
             'back_cast_class',
             'cast_map',
             'request_kwargs',
-            'server_timezone'
+            'server_timezone',
+            'threaded_paginate',
         )
         for key in optkeys:
             if key in kwargs:
@@ -530,7 +535,10 @@ class FmServer():
                 raise AttributeError(
                     "One cannot specify a skip or a max value in pagination mode."
                 )
-            return _paginate(fm_server=self, query=query, page_size=paginate)
+            if self.threaded_paginate:
+                return _threaded_paginate(fm_server=self, query=query, page_size=paginate)
+            else:
+                return _paginate(fm_server=self, query=query, page_size=paginate)
 
         if self.debug:
             log.info("FmServer({})".format(url))
@@ -797,3 +805,83 @@ def _paginate(fm_server, query, page_size, current=0):
 
     for item in _paginate(fm_server, query, page_size, current=current+page_size):
         yield item
+
+
+def _threaded_paginate(fm_server, query, page_size):
+
+    def _data_fetcher(fm_server, query, page_size, current, share_mem, condition_object):
+        """"
+        Procuces a recursive call to do_request for the next :page_size: object and 
+        always fills the result into share_mem['data'] then notifies the waiting threads.
+        """
+        # simply copy the fm_server objects and query.
+        fm_server_copy = copy.copy(fm_server)
+        query = copy.copy(query)
+        query.set_skip(current)
+        query.set_max(page_size)
+
+        for item in fm_server_copy._do_request(query, is_file=False, paginate=None):
+            fm_server.fm_meta = fm_server_copy.fm_meta
+            # push data into queue.Queue object
+            share_mem['data'].put(item)
+            # tmp_buffer.append(item)
+
+        # condition_object.acquire()
+        # for item in tmp_buffer:
+
+        N = fm_server_copy.fetched_records_number()
+        if N < page_size:
+            # flags the fact that we are done processing.
+            share_mem['end-of-job'] = True
+
+            # wait here until all data are processed in the queue
+            share_mem['data'].join()
+            log.info(f"Downloaded item from FMS done")
+            return
+
+        del fm_server_copy
+        # recursive call for the next :page_size: objects
+        _data_fetcher(
+            fm_server=fm_server,
+            query=query,
+            page_size=page_size,
+            current=current+page_size,
+            share_mem=share_mem,
+            condition_object=condition_object
+        )
+
+    def _consumer_iterator(share_mem, condition_object):
+        while True:
+            try:
+                item = share_mem['data'].get(timeout=1)  # blocking call to get.
+                share_mem['data'].task_done()
+            except queue.Empty:
+                if share_mem['end-of-job']:
+                    return
+                else:
+                    continue
+            yield item
+
+    condition_object = threading.Condition()
+    shared_obj = {
+        'data': queue.Queue(),
+        'end-of-job': False,
+    }
+    t1 = threading.Thread(
+        target=_data_fetcher,
+        kwargs={
+            'fm_server': fm_server,
+            'query': query,
+            'page_size': page_size,
+            'current': 0,
+            'share_mem': shared_obj,
+            'condition_object': condition_object,
+        },
+        daemon=True,
+    )
+    t1.start()
+
+    return _consumer_iterator(
+        share_mem=shared_obj,
+        condition_object=condition_object,
+    )
