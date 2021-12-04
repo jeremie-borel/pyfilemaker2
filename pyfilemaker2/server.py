@@ -7,6 +7,7 @@ import copy
 import re
 import queue
 import threading
+import time
 
 from .metadata import FmMeta
 from .errors import FmError
@@ -37,6 +38,7 @@ class FmServer():
         'timeout': 25,
     }
     server_timezone = None
+    # see _threaded_paginate function below.
     threaded_paginate = True
 
     def __init__(
@@ -535,7 +537,7 @@ class FmServer():
                 raise AttributeError(
                     "One cannot specify a skip or a max value in pagination mode."
                 )
-            if self.threaded_paginate:
+            if self.options['threaded_paginate']:
                 return _threaded_paginate(fm_server=self, query=query, page_size=paginate)
             else:
                 return _paginate(fm_server=self, query=query, page_size=paginate)
@@ -808,8 +810,21 @@ def _paginate(fm_server, query, page_size, current=0):
 
 
 def _threaded_paginate(fm_server, query, page_size):
+    """
+    Instead of 'classic' pagination, we launch a thread that only fetchs the data
+    and fills a queue.Queue objects. The main loop consumes the queue and looks
+    like an iterator over the returned item.
 
-    def _data_fetcher(fm_server, query, page_size, current, share_mem, condition_object):
+    The advantage comes when processing the objects retrieved from FMS takes some IO
+    time (like storing them in a DB.). In this case, the fetching can occur in parallel.
+    Note that for light FMS objects this pagination may be worse than the classical one.
+
+    Note that the queries fetching the FMS objects are still done one after the other 
+    as it is launched by the same thread. The FIFO queue ensures the processing order
+    is preserved.
+    """
+
+    def _data_fetcher(fm_server, query, page_size, current, share_mem):
         """"
         Procuces a recursive call to do_request for the next :page_size: object and 
         always fills the result into share_mem['data'] then notifies the waiting threads.
@@ -819,24 +834,24 @@ def _threaded_paginate(fm_server, query, page_size):
         query = copy.copy(query)
         query.set_skip(current)
         query.set_max(page_size)
-
         for item in fm_server_copy._do_request(query, is_file=False, paginate=None):
             fm_server.fm_meta = fm_server_copy.fm_meta
             # push data into queue.Queue object
             share_mem['data'].put(item)
-            # tmp_buffer.append(item)
-
-        # condition_object.acquire()
-        # for item in tmp_buffer:
 
         N = fm_server_copy.fetched_records_number()
+        share_mem['total'] += N
         if N < page_size:
             # flags the fact that we are done processing.
             share_mem['end-of-job'] = True
 
             # wait here until all data are processed in the queue
             share_mem['data'].join()
-            log.info(f"Downloaded item from FMS done")
+            log.info("Downloaded {} items from FMS {}:{}".format(
+                share_mem['total'],
+                fm_server_copy.db,
+                fm_server_copy.layout,
+            ))
             return
 
         del fm_server_copy
@@ -847,25 +862,34 @@ def _threaded_paginate(fm_server, query, page_size):
             page_size=page_size,
             current=current+page_size,
             share_mem=share_mem,
-            condition_object=condition_object
         )
 
-    def _consumer_iterator(share_mem, condition_object):
+    def _consumer_iterator(share_mem):
+        count = 0
         while True:
             try:
-                item = share_mem['data'].get(timeout=1)  # blocking call to get.
+                # blocking call to get.
+                item = share_mem['data'].get(timeout=1)
                 share_mem['data'].task_done()
             except queue.Empty:
                 if share_mem['end-of-job']:
                     return
                 else:
                     continue
+            count += 1
+            # we add a tiny time.sleep every 70% of paginate
+            # so that the fetching thread has a chance to 
+            # start fetching the data.
+            if count > 0.7*share_mem['paginate']:
+                time.sleep(1e-4)
+                count = 0
             yield item
 
-    condition_object = threading.Condition()
     shared_obj = {
         'data': queue.Queue(),
         'end-of-job': False,
+        'paginate': page_size,
+        'total': 0,
     }
     t1 = threading.Thread(
         target=_data_fetcher,
@@ -875,13 +899,9 @@ def _threaded_paginate(fm_server, query, page_size):
             'page_size': page_size,
             'current': 0,
             'share_mem': shared_obj,
-            'condition_object': condition_object,
         },
         daemon=True,
     )
     t1.start()
 
-    return _consumer_iterator(
-        share_mem=shared_obj,
-        condition_object=condition_object,
-    )
+    return _consumer_iterator(share_mem=shared_obj)
