@@ -96,34 +96,38 @@ class BackCast:
     FM_DEFAULT_TIMESTAMP = "%m/%d/%Y %H:%M:%S"
 
     def __init__(self, fm_server=None):
-        """The :fm_server: object is passed at the initialisation of this class.
-        It can be used to cast some field in a different way"""
+        """
+        The :fm_server: object is passed at the initialisation of this class.
+        It can be used to cast some field in a different way
+        """
         if fm_server:
             self.tz = fm_server.options['server_timezone']
 
-    def __call__( self, field, value ):
-        if isinstance( value, datetime.datetime ):
+    def __call__(self, field, value):
+        if isinstance(value, datetime.datetime):
             # if server timezone is set and the datetime is aware:
-            if self.tz and value.tzinfo is not None and value.tzinfo.utcoffset(value) is not None:
+            if (
+                self.tz and
+                value.tzinfo is not None and
+                value.tzinfo.utcoffset(value) is not None
+            ):
                 if self.tz != value.tzinfo:
                     value = value.astimezone(self.tz)
-            return value.strftime( self.__class__.FM_DEFAULT_TIMESTAMP )
+            return value.strftime(self.__class__.FM_DEFAULT_TIMESTAMP)
 
-        elif isinstance( value, datetime.date ):
-            return value.strftime( self.__class__.FM_DEFAULT_DATE )
+        elif isinstance(value, datetime.date):
+            return value.strftime(self.__class__.FM_DEFAULT_DATE)
 
-        elif isinstance( value, datetime.time ):
-            return value.strftime( self.__class__.FM_DEFAULT_TIME )
+        elif isinstance(value, datetime.time):
+            return value.strftime(self.__class__.FM_DEFAULT_TIME)
 
-        elif isinstance( value, bytes ):
+        elif isinstance(value, bytes):
             return value.decode('utf8')
 
-        elif isinstance( value, numbers.Number ):
+        elif isinstance(value, numbers.Number):
             return value
 
         return str(value)
-
-
 
 
 default_cast_map = {

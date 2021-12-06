@@ -29,7 +29,9 @@ except ModuleNotFoundError:
 
 def get_fm_server(server=TEST_SERVER):
     fm = FmServer(
-        url='{}://{}:{}@{}/'.format(TEST_PROTOCOL, TEST_USER, TEST_PASSWORD, TEST_SERVER),
+        url='{}://{}:{}@{}/'.format(
+            TEST_PROTOCOL, TEST_USER, TEST_PASSWORD, TEST_SERVER
+        ),
         db=TEST_FILE,
         request_kwargs={
             'verify': True,

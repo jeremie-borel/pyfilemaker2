@@ -194,7 +194,7 @@ class FmFieldData(FmFieldBase):
 
     def dump(self):
         """Verbose representation of the object"""
-        return "{}: type:{}".format(self.raw_name, self.caster.__class__.__name__)
+        return f"{self.raw_name}: type:{self.caster.__class__.__name__}"
 
 
 class FmFieldContainer(FmFieldBase, dict):
@@ -233,7 +233,12 @@ def metadata_parser(node, fm_meta, table=None):
         f = fm_meta.decode_attrs
         attrs = {f(k): f(v) for k, v in node.attrib.items()}
         raw_name = attrs['name']
-        f = FmFieldData(raw_name=raw_name, attrs=attrs, fm_meta=fm_meta, table=table)
+        f = FmFieldData(
+            raw_name=raw_name,
+            attrs=attrs,
+            fm_meta=fm_meta,
+            table=table
+        )
         fm_meta.add_field(f)
 
     elif tag == 'relatedset-definition':

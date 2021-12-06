@@ -19,8 +19,8 @@ def parse(stream, fm_meta=None, only_meta=False):
 
     :fm_meta: FmMeta instance or None.
 
-    :stream: is either a file-like objects (bytestring for python2.7, do not use codecs.open)
-    or a response.raw attribute from a request query.
+    :stream: is either a file-like objects or a response.raw attribute from a
+    request query.
     """
     if not fm_meta:
         fm_meta = FmMeta()
@@ -83,6 +83,7 @@ def parse(stream, fm_meta=None, only_meta=False):
                 fm_meta.error = elem.attrib.get('code', None)
                 if fm_meta.error is None:
                     raise XmlError("Badly formatted error code in the xml")
+
                 fm_meta.error = int(fm_meta.error)
                 if fm_meta.error != 0:
                     # code 401 means no record match the request.
