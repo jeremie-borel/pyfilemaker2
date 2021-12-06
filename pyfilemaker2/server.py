@@ -834,10 +834,21 @@ def _threaded_paginate(fm_server, query, page_size):
         query = copy.copy(query)
         query.set_skip(current)
         query.set_max(page_size)
-        for item in fm_server_copy._do_request(query, is_file=False, paginate=None):
-            fm_server.fm_meta = fm_server_copy.fm_meta
-            # push data into queue.Queue object
-            share_mem['data'].put(item)
+        try:
+            for item in fm_server_copy._do_request(query, is_file=False, paginate=None):
+                fm_server.fm_meta = fm_server_copy.fm_meta
+                # push data into queue.Queue object
+                share_mem['data'].put(item)
+        except requests.ConnectionError as e:
+            share_mem['end-of-job'] = True
+            log.info("Failed to establish a connection.")
+            return
+        except Exception as e:
+            # any type of exception, we must mark the thread as ended.
+            share_mem['end-of-job'] = True
+            log.info("Failed to establish a connection.")
+            log.exception(e)
+            return
 
         N = fm_server_copy.fetched_records_number()
         share_mem['total'] += N
