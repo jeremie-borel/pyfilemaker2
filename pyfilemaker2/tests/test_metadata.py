@@ -62,7 +62,14 @@ class TestFieldType(unittest.TestCase):
             'f_number': 0.123,
             'f_time': datetime.time(hour=11, minute=53, second=56),
             'f_date': datetime.date(year=2018, month=9, day=1),
-            'f_timestamp': datetime.datetime(year=2018, month=9, day=1, hour=11, minute=54, second=7),
+            'f_timestamp': datetime.datetime(
+                year=2018,
+                month=9,
+                day=1,
+                hour=11,
+                minute=54,
+                second=7
+            ),
         }
 
         for k, v in out.items():
@@ -71,7 +78,14 @@ class TestFieldType(unittest.TestCase):
     def test_data_tz(self):
         f1 = os.path.join(basedir, './fields_types.xml')
         tz = pytz.timezone('Europe/Zurich')
-        d = datetime.datetime(year=2018, month=9, day=1, hour=11, minute=54, second=7)
+        d = datetime.datetime(
+            year=2018,
+            month=9,
+            day=1,
+            hour=11,
+            minute=54,
+            second=7
+        )
         d = tz.normalize(tz.localize(d))
 
         fm = FmMeta(server_timezone=tz)

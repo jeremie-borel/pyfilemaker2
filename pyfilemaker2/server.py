@@ -4,7 +4,7 @@ from urllib.parse import urlparse, urlencode
 import requests
 import logging
 import copy
-import re
+from re import compile
 import queue
 import threading
 import time
@@ -60,6 +60,9 @@ class FmServer():
     server_timezone = None
     # see _threaded_paginate function below.
     threaded_paginate = True
+    GET_FILE_REGEX = compile(
+        r'/fmi/xml/cnt/(?P<name>[,%\w\d.-]+)\.(?P<ext>[\w]+)[?]-'
+    )
 
     def __init__(
         self,
@@ -146,17 +149,14 @@ class FmServer():
             out.write(data)
             out.close()
 
-        if :canonical_filename: is True, the filename and file extension must match
-        the regexp pattern below. Otherwise filename and file_extension are
-        empty strings.
+        if :canonical_filename: is True, the filename and file extension must
+        match the regexp pattern below. Otherwise filename and file_extension
+        are empty strings.
         """
         file_name = ""
         file_extension = ""
         if canonical_filename:
-            find = re.match(
-                '/fmi/xml/cnt/(?P<name>[,%\w\d.-]+)\.(?P<ext>[\w]+)[?]-',
-                file_xml_uri,
-            )
+            find = FmServer.GET_FILE_REGEX.match(file_xml_uri)
             if not find:
                 raise FmError(code=700)
 
@@ -168,7 +168,8 @@ class FmServer():
     def do_script(self, script_name, param=None, return_all=True):
         """
         Triggers the excution of script :script_name: on the FM server.
-        Note that a script always returns the results from the layout with findall.
+        Note that a script always returns the results from the layout with
+        findall.
 
         Returns an iterator.
 
@@ -179,15 +180,15 @@ class FmServer():
 
           result = fm.do_script('myname')
 
-        the script is executed but the returned result are not yet parsed. This occurs only
-        when one evaluates the generator, e.g.
+        the script is executed but the returned result are not yet parsed. This
+        occurs only when one evaluates the generator, e.g.
 
           for item in result:
               ...
 
-        if :param: is not None, it is passed as argument to the FM server. If you need multiple
-        arguments, concatenate them in python into a single one and split them back in the FM
-        script.
+        if :param: is not None, it is passed as argument to the FM server. If
+        you need multiple arguments, concatenate them in python into a single
+        one and split them back in the FM script.
         """
         query = FmQuery(action='-findall', fm_server=self)
         if not return_all:
@@ -216,10 +217,11 @@ class FmServer():
             raise AttributeError("Resultset has not been evaluated yet.")
 
     def total_records_number(self, safe=True):
-        """Returns the number of result that would be returned in a
-        do_find_all request.
+        """
+        Returns the number of result that would be returned in a do_find_all
+        request.
 
-        ATM available only once the first result has been parsed, not before. E.g.
+        Available only once the first result has been parsed, not before. E.g.
 
           fm = FmServer(...)
           fm.do_find_any()     # queries and parses the resultset
@@ -235,8 +237,9 @@ class FmServer():
     def do_find_query(self, query_dict, skip=None, max=None, sort=[], paginate=None):
         """
         Allows to do more complex queries than do_find.
-        Operators in the Django like syntax like size__gt=22 are not possible in this
-        mode but one can still use FM operators using e.g. 'size'='>22'
+
+        Operators in the Django like syntax like size__gt=22 are not possible
+        in this mode but one can still use FM operators using e.g. 'size'='>22'
 
         # search for blue color houses:
         fm.do_find_query({'color':'blue'})
@@ -252,8 +255,8 @@ class FmServer():
         # search for id = 1 or 2 or color=blue
         fm.do_find_query({'id':[1,2], 'color':'blue'})
 
-        # each argument must be though as an FMS research and thus can be negated (omit records)
-        # with a '!' in front of it.
+        # each argument must be though as an FMS research and thus can be
+        # negated (omit records) with a '!' in front of it.
         # search for id = 1 or 2 or color!=blue
         fm.do_find_query({'id':[1,2], '!color':'blue'})
 
@@ -263,8 +266,8 @@ class FmServer():
             '1': {'color':'blue','size':'big'},
         })
         # note that the key '1' is arbitrary, it is not even sent to the xml.
-        # Furthermore, in this form, search values (e.g. 'blue') must be single values. They
-        # cannot be arrays like in the previous example.
+        # Furthermore, in this form, search values (e.g. 'blue') must be single
+        # values. They cannot be arrays like in the previous example.
 
         # search for (color='blue' AND size='big') OR stairs=0 houses
         fm.do_find_query({
@@ -273,15 +276,16 @@ class FmServer():
         })
 
         # coumpound queries can be negated but then their order matters, hence
-        # one should use a collections.OrderedDict instead of a dict.
-        # To fully understand the logic here, test on a FM table manually...
+        # one should use a collections.OrderedDict instead of a dict. To fully
+        # understand the logic here, test on a FM table manually...
         # search for ('blue' AND 'big') excluding houses with stairs=1.
         fm.do_find_query( OrderedDict([
             ('1', {'color':'blue','size':'big'}),
             ('!2': {'stairs':1}),
         ]))
 
-        # search for houses not with stairs=1 (e.g. stairs!=1) OR (color='blue' AND size='big')
+        # search for houses not with stairs=1 (e.g. stairs!=1) OR (color='blue'
+        # AND size='big')
         fm.do_find_query( OrderedDict([
             ('!2', {'stairs':1}),
             ('1', {'color':'blue','size':'big'}),
@@ -339,8 +343,8 @@ class FmServer():
         """Performs a find query on the FM server
 
         search criterions can be specified through the :what: parameters or
-        through the kwargs arguments. The two forms can be combined. The :kwargs:
-        forms as precedence.
+        through the kwargs arguments. The two forms can be combined. The
+        :kwargs: forms as precedence.
 
         # e.g.
         fm = FmServer( db='thedb', layout='layout_name')
@@ -369,23 +373,25 @@ class FmServer():
         #   __contains,
         #   __does_not_contains,
 
-        # Operators can also be specified in the field value. In the latter case,
-        # the FMP syntax must be used (see the FM doc for those) e.g.
+        # Operators can also be specified in the field value. In the latter
+        # case, the FMP syntax must be used (see the FM doc for those) e.g.
         fm.do_find(id='4...77')   # for ids in the range 4 to 77. Or
         fm.do_find(id='>4')       # for ids bigger than 4.
         fm.do_find(id='==')       # for records with no id.
 
         # Note that by default (no operator specified), The FM server assumes a
-        # __beginswith operator for string data and a __equals for numeric data.
-        # Which means that
+        # __beginswith operator for string data and a __equals for numeric
+        # data.  Which means that
         fm.do_find(id=4)
-        # will match id=4 but also id=47 if the 'id' field is defined as a string
-        # but not if it is defined as a number. Worse, if your 'id' field is numeric
-        # but it contains something like '4ac', it will match the query and the default
-        # type caster of this library will convert it to 'nan' (the object 'not a number')
+        # will match id=4 but also id=47 if the 'id' field is defined as a
+        # string but not if it is defined as a number. Worse, if your 'id'
+        # field is numeric but it contains something like '4ac', it will match
+        # the query and the default type caster of this library will convert it
+        # to 'nan' (the object 'not a number')
 
         :sort: argument can contain a list of sort fields. E.g.
-        # to sort first by id and a second sort criterion by date in decreasing order:
+        # to sort first by id and a second sort criterion by date in decreasing
+        # order:
         fm.do_find(id__gt=4, sort=['id', '-date'])
         # another equivalent syntax is:
         fm.do_find(id__gt=4, sort=[('id','ascend'), ('date','descend')])
@@ -503,14 +509,14 @@ class FmServer():
             for key in what.changed_keys():
                 if isinstance(what[key], MutableDict):
                     m = (
-                        "Can't handle yet the editing of related parameters '{}' (e.g table2::fieldX). Skipping it."
-                        .format(key)
+                        f"Can't handle editing of related parameters '{key}' "
+                        "(e.g table2::fieldX). Skipping it."
                     )
                     raise ValueError(m)
                 if isinstance(what[key], (list, tuple, set)):
                     m = (
-                        "Can't set multivalue field '{}' this way. See the doc of do_edit for a workaround"
-                        .format(key)
+                        f"Can't set multivalue field '{key}'. See the "
+                        "documentation of do_edit for a workaround"
                     )
                     raise ValueError(m)
 
@@ -555,12 +561,20 @@ class FmServer():
         if paginate and not is_file:
             if '-skip' in query.args or '-max' in query.args:
                 raise AttributeError(
-                    "One cannot specify a skip or a max value in pagination mode."
+                    "Can't specify a skip or a max value in pagination mode."
                 )
             if self.options['threaded_paginate']:
-                return _threaded_paginate(fm_server=self, query=query, page_size=paginate)
+                return _threaded_paginate(
+                    fm_server=self,
+                    query=query,
+                    page_size=paginate
+                )
             else:
-                return _paginate(fm_server=self, query=query, page_size=paginate)
+                return _paginate(
+                    fm_server=self,
+                    query=query,
+                    page_size=paginate
+                )
 
         if self.debug:
             log.info("FmServer({})".format(url))
@@ -596,8 +610,10 @@ class FmQuery():
     """This class is internal to FmServer. It is used to define the arguements
     that can or must be passed with a given action and it formats and casts
     theses arguments before building a request url."""
-    _scripts = ['-script', '–script.param', '-script.prefind',
-                '-script.prefind.param', '-script.presort', '–script.presort.param']
+    _scripts = [
+        '-script', '–script.param', '-script.prefind', '-script.prefind.param',
+        '-script.presort', '–script.presort.param'
+    ]
     _layr = ['-lay.response']
     _finds = ['-recid', '-lop', '-op', '-max',
               '-skip', '-sortorder', '-sortfield']
@@ -620,7 +636,12 @@ class FmQuery():
         },
         '-edit': {
             'required': ['-db', '-lay', '-recid'],
-            'optional': ['-modid', '-lay.response', '–delete.related', '–relatedsets.max'] + _scripts,
+            'optional': [
+                '-modid',
+                '-lay.response',
+                '–delete.related',
+                '–relatedsets.max'
+            ] + _scripts,
             'params': True,
         },
         '-find': {
@@ -640,7 +661,9 @@ class FmQuery():
         },
         '-findquery': {
             'required': ['-db', '-lay', '-query'],
-            'optional': ['-max', '-skip', '-sortorder', '-sortfield'] + _layr + _scripts,
+            'optional': [
+                '-max', '-skip', '-sortorder', '-sortfield'
+            ] + _layr + _scripts,
             'params': True,
         },
         '-layoutnames': {
@@ -751,7 +774,11 @@ class FmQuery():
         # finding the table and operator parts if any
         parts = name.split('__')
         op = None
-        if parse_operator and len(parts) > 1 and parts[-1] in self.__class__._operators:
+        if (
+            parse_operator and
+            len(parts) > 1 and
+            parts[-1] in self.__class__._operators
+        ):
             op = self.__class__._operators[parts[-1]]
             parts = parts[:-1]
 
@@ -804,9 +831,6 @@ class FmQuery():
         request.append((self.action, ''))
         self.request = request
 
-        # if args:
-        #     log.warning("Request did not consumed all its arguemnts ({})".format(args))
-
         return urlencode(request, doseq=False)
 
 
@@ -816,38 +840,50 @@ def _paginate(fm_server, query, page_size, current=0):
 
     query.set_skip(current)
     query.set_max(page_size)
-    for item in fm_server_copy._do_request(query, is_file=False, paginate=None):
+    for item in fm_server_copy._do_request(
+        query,
+        is_file=False,
+        paginate=None
+    ):
         fm_server.fm_meta = fm_server_copy.fm_meta
         yield item
+
     N = fm_server_copy.fetched_records_number()
     if N < page_size:
         return
 
     del fm_server_copy
 
-    for item in _paginate(fm_server, query, page_size, current=current+page_size):
+    for item in _paginate(
+        fm_server,
+        query,
+        page_size,
+        current=current+page_size
+    ):
         yield item
 
 
 def _threaded_paginate(fm_server, query, page_size):
     """
-    Instead of 'classic' pagination, we launch a thread that only fetchs the data
-    and fills a queue.Queue objects. The main loop consumes the queue and looks
-    like an iterator over the returned item.
+    Instead of 'classic' pagination, we launch a thread that only fetchs the
+    data and fills a queue.Queue objects. The main loop consumes the queue and
+    looks like an iterator over the returned item.
 
-    The advantage comes when processing the objects retrieved from FMS takes some IO
-    time (like storing them in a DB.). In this case, the fetching can occur in parallel.
-    Note that for light FMS objects this pagination may be worse than the classical one.
+    The advantage comes when processing the objects retrieved from FMS takes
+    some IO time (like storing them in a DB.). In this case, the fetching can
+    occur in parallel. Note that for light FMS objects this pagination may be
+    worse than the classical one.
 
-    Note that the queries fetching the FMS objects are still done one after the other 
-    as it is launched by the same thread. The FIFO queue ensures the processing order
-    is preserved.
+    Note that the queries fetching the FMS objects are still done one after the
+    other as it is launched by the same thread. The FIFO queue ensures the
+    processing order is preserved.
     """
 
     def _data_fetcher(fm_server, query, page_size, current, share_mem):
         """"
-        Procuces a recursive call to do_request for the next :page_size: object and 
-        always fills the result into share_mem['data'] then notifies the waiting threads.
+        Procuces a recursive call to do_request for the next :page_size: object
+        and always fills the result into share_mem['data'] then notifies the
+        waiting threads.
         """
         # simply copy the fm_server objects and query.
         fm_server_copy = copy.copy(fm_server)
@@ -855,7 +891,11 @@ def _threaded_paginate(fm_server, query, page_size):
         query.set_skip(current)
         query.set_max(page_size)
         try:
-            for item in fm_server_copy._do_request(query, is_file=False, paginate=None):
+            for item in fm_server_copy._do_request(
+                query,
+                is_file=False,
+                paginate=None
+            ):
                 fm_server.fm_meta = fm_server_copy.fm_meta
                 # push data into queue.Queue object
                 share_mem['data'].put(item)
@@ -909,7 +949,7 @@ def _threaded_paginate(fm_server, query, page_size):
                     continue
             count += 1
             # we add a tiny time.sleep every 70% of paginate
-            # so that the fetching thread has a chance to 
+            # so that the fetching thread has a chance to
             # start fetching the data.
             if count > 0.7*share_mem['paginate']:
                 time.sleep(1e-4)
