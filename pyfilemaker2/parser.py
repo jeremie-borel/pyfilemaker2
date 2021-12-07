@@ -37,6 +37,7 @@ def parse(stream, fm_meta=None, only_meta=False):
     data_buffer = []
     decode = fm_meta.decode_data
     caster = None
+    super_record = None
 
     for event, elem in tree:
         if event == 'start-ns':
