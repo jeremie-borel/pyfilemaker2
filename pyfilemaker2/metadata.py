@@ -18,6 +18,7 @@ class FmMeta():
     - relatedset fields definition
 
     """
+
     def __init__(self, cast_map=None, server_timezone=None):
         self.cast_map = default_cast_map
         if cast_map:

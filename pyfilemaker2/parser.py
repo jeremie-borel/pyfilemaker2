@@ -101,7 +101,9 @@ def parse(stream, fm_meta=None, only_meta=False):
                 # timestamp-format="MM/dd/yyyy HH:mm:ss"
                 # total-count="4"/>
                 fm_meta.database = dict(elem.attrib)
-                dict_formats = fm_meta.parse_fm_dates_formats(formats=fm_meta.database)
+                dict_formats = fm_meta.parse_fm_dates_formats(
+                    formats=fm_meta.database
+                )
                 fm_meta.date_pattern = dict_formats['date']
                 fm_meta.time_pattern = dict_formats['time']
                 fm_meta.timestamp_pattern = dict_formats['timestamp']

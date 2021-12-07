@@ -899,7 +899,7 @@ def _threaded_paginate(fm_server, query, page_size):
                 fm_server.fm_meta = fm_server_copy.fm_meta
                 # push data into queue.Queue object
                 share_mem['data'].put(item)
-        except requests.ConnectionError as e:
+        except requests.ConnectionError:
             share_mem['end-of-job'] = True
             log.info("Failed to establish a connection.")
             return
