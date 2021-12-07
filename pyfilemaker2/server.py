@@ -27,6 +27,26 @@ class FmServer():
 
     Note that all the static arguments can also be passed in the **kwargs from
     the FmServder.__init__'s method.
+
+    Customize your FmServer instance:
+
+    if you want to change the way numbers are cast (e.g. using , as a decimal separator)
+    you can redefine the cast_map attribute:
+
+    from caster import CommaDecimalNumberCast, FM_NUMBER
+
+    class MyFmServer(FmServer):
+        cast_map = { FM_NUMBER: CommaDecimalNumberCast }
+
+    ...
+
+    fm = MyFmServer()
+
+    or you can pass the argument directly to the constructor:
+
+    fm = FmServer(
+        cast_map = { FM_NUMBER: CommaDecimalNumberCast }
+    )
     """
     meta_class = FmMeta
     cast_map = None

@@ -15,6 +15,7 @@ FM_TIMESTAMP = 'timestamp'
 
 class TypeCast:
     """Type caster, get's initiated with the corresponding FmFieldData"""
+
     def __init__(self, fm_field, fm_meta):
         pass
 
@@ -26,6 +27,15 @@ class NumberCast(TypeCast):
     def __call__(self, value):
         try:
             return float(value)
+        except Exception:
+            # return NaN
+            return float('nan')
+
+
+class CommaDecimalNumberCast(TypeCast):
+    def __call__(self, value):
+        try:
+            return float(value.replace(',', '.'))
         except Exception:
             # return NaN
             return float('nan')
@@ -101,29 +111,27 @@ class BackCast:
         if fm_server:
             self.tz = fm_server.options['server_timezone']
 
-    def __call__( self, field, value ):
-        if isinstance( value, datetime.datetime ):
+    def __call__(self, field, value):
+        if isinstance(value, datetime.datetime):
             # if server timezone is set and the datetime is aware:
             if self.tz and value.tzinfo is not None and value.tzinfo.utcoffset(value) is not None:
                 if self.tz != value.tzinfo:
                     value = value.astimezone(self.tz)
-            return value.strftime( self.__class__.FM_DEFAULT_TIMESTAMP )
+            return value.strftime(self.__class__.FM_DEFAULT_TIMESTAMP)
 
-        elif isinstance( value, datetime.date ):
-            return value.strftime( self.__class__.FM_DEFAULT_DATE )
+        elif isinstance(value, datetime.date):
+            return value.strftime(self.__class__.FM_DEFAULT_DATE)
 
-        elif isinstance( value, datetime.time ):
-            return value.strftime( self.__class__.FM_DEFAULT_TIME )
+        elif isinstance(value, datetime.time):
+            return value.strftime(self.__class__.FM_DEFAULT_TIME)
 
-        elif isinstance( value, bytes ):
+        elif isinstance(value, bytes):
             return value.decode('utf8')
 
-        elif isinstance( value, numbers.Number ):
+        elif isinstance(value, numbers.Number):
             return value
 
         return str(value)
-
-
 
 
 default_cast_map = {
