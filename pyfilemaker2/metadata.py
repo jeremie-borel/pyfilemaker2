@@ -156,7 +156,7 @@ class FmFieldBase():
 
 class FmFieldData(FmFieldBase):
     def __init__(self, raw_name, attrs=None, fm_meta=None, table=None):
-        super(FmFieldData, self).__init__(
+        super().__init__(
             raw_name=raw_name,
             attrs=attrs,
             fm_meta=fm_meta,
@@ -199,7 +199,7 @@ class FmFieldData(FmFieldBase):
 
 class FmFieldContainer(FmFieldBase, dict):
     def __init__(self, raw_name, attrs=None, fm_meta=None):
-        super(FmFieldContainer, self).__init__(
+        super().__init__(
             raw_name=raw_name,
             attrs=attrs,
             fm_meta=fm_meta
