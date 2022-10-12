@@ -4,6 +4,7 @@
 # build the source:
 python setup.py clean --all
 python setup.py build
+python setup.py sdist
 
 pip install twine
 
