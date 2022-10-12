@@ -1,5 +1,6 @@
 
 
+# change the version number in setup.py
 
 # build the source:
 python setup.py clean --all

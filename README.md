@@ -89,8 +89,11 @@ package.
 
 ### 5. CHANGES
 
-0.2.3:
+0.2.4:
 - Fix https://github.com/jeremie-borel/pyfilemaker2/issues/1 that prevented FMS 19 to work.
+
+0.2.3:
+- 
 
 0.2.2:
 
