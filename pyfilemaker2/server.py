@@ -453,7 +453,7 @@ class FmServer():
             if e.code == 101:
                 if not error_if_missing:
                     return None
-            raise e.raise_with_traceback()
+            raise FmError from e
 
     def do_edit(self, what=None, **kwargs):
         """
@@ -592,13 +592,15 @@ class FmServer():
 
         if is_file:
             return resp.content
-
         # storing the fm_meta objects for later use
         self.fm_meta = self.options['meta_class'](
             cast_map=self.options['cast_map'],
             server_timezone=self.options['server_timezone'],
         )
         self.fm_meta.query = query
+        # Adding the line below as per one of the comment in the accepted answer
+        # https://stackoverflow.com/questions/16923898/how-to-get-the-raw-content-of-a-response-in-requests-with-python
+        resp.raw.decode_content = True
         # parse returns a generator, so no try catch can be done here.
         return parse(
             stream=resp.raw,

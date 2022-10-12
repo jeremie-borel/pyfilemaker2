@@ -1,5 +1,5 @@
 # PyFileMaker - Integrating FileMaker and Python
-* (c) 2016-2021 Jeremie Borel
+* (c) 2016-2022 Jeremie Borel
 * (c) 2014-2016 Marcin Kawa, kawa.macin@gmail.com
 * (c) 2006-2008 Klokan Petr Pridal, klokan@klokan.cz
 * (c) 2002-2006 Pieter Claerhout, pieter@yellowduck.be
@@ -47,11 +47,11 @@ pyfilemaker2 implements the following additional features:
 
 ### 2. REQUIREMENTS
 
-At the time of the development (2021), pyfilemaker2 is using:
+At the time of the development (2022), pyfilemaker2 is using:
 
 ```
-requests=2.25.1
-lxml=4.6.2
+requests=2.28.1
+lxml=4.9.1
 ```
 
 The test suite also requires
@@ -61,10 +61,12 @@ mock
 pytz
 ```
 
-The code has been developped on Max OSX 10.15 and is used in production on 
+The code has been tested on Max OSX 12.6 and is used in production on 
 debian jessie. Other plateforms have not been tested.
 
 You will also need a FileMaker server with the XML enabled of course.
+Currently version FMS18 and FMS19 are working. Most probably older versions
+of FMS too.
 
 ----
 
@@ -86,6 +88,9 @@ FmServer object is likely the unique thing one will need to import from this
 package.
 
 ### 5. CHANGES
+
+0.2.3:
+- Fix https://github.com/jeremie-borel/pyfilemaker2/issues/1 that prevented FMS 19 to work.
 
 0.2.2:
 
