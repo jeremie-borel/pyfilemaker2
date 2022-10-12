@@ -17,4 +17,4 @@ twine upload --repository-url https://test.pypi.org/legacy/ dist/*
 twine upload dist/*
 
 # install from test repo:
-pip --no-cache install -U --extra-index-url https://testpypi.python.org/pyp pyfilemaker2
+pip  --no-cache  install --index-url https://test.pypi.org/simple/ pyfilemaker2==0.2.4
