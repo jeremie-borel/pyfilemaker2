@@ -89,6 +89,9 @@ package.
 
 ### 5. CHANGES
 
+0.2.5:
+- server_timezone parameter now requires a zoneinfo.ZoneInfo object or None.
+
 0.2.4:
 - Fix https://github.com/jeremie-borel/pyfilemaker2/issues/1 that prevented FMS 19 to work.
 

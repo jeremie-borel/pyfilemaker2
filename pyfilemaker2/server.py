@@ -1,5 +1,6 @@
 
 from urllib.parse import urlparse, urlencode
+from zoneinfo import ZoneInfo
 
 import requests
 import logging
@@ -57,7 +58,7 @@ class FmServer():
         'verify': True,
         'timeout': 25,
     }
-    server_timezone = None
+    server_timezone:ZoneInfo = None
     # see _threaded_paginate function below.
     threaded_paginate = True
     GET_FILE_REGEX = compile(
