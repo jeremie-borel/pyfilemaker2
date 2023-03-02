@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import datetime
 import numbers
+from typing import Any, Optional
 
 # from builtins import str
 
@@ -19,12 +20,12 @@ class TypeCast:
     def __init__(self, fm_field, fm_meta):
         pass
 
-    def __call__(self, value):
+    def __call__(self, value: str) -> Any:
         return value
 
 
 class NumberCast(TypeCast):
-    def __call__(self, value):
+    def __call__(self, value: str) -> float:
         try:
             return float(value)
         except Exception:
@@ -33,7 +34,7 @@ class NumberCast(TypeCast):
 
 
 class CommaDecimalNumberCast(TypeCast):
-    def __call__(self, value):
+    def __call__(self, value: str) -> float:
         try:
             return float(value.replace(',', '.'))
         except Exception:
@@ -42,7 +43,7 @@ class CommaDecimalNumberCast(TypeCast):
 
 
 class TextCast(TypeCast):
-    def __call__(self, value):
+    def __call__(self, value: str) -> str:
         if value:
             return value
         return ''
@@ -55,7 +56,7 @@ class DateCast(TypeCast):
     def __init__(self, fm_field, fm_meta):
         self.pat = fm_meta.date_pattern
 
-    def __call__(self, value):
+    def __call__(self, value: str) -> Optional[datetime.date]:
         try:
             d = datetime.datetime.strptime(
                 value,
@@ -70,7 +71,7 @@ class TimeCast(TypeCast):
     def __init__(self, fm_field, fm_meta):
         self.pat = fm_meta.time_pattern
 
-    def __call__(self, value):
+    def __call__(self, value: str) -> Optional[datetime.time]:
         try:
             return datetime.datetime.strptime(
                 value,
@@ -85,15 +86,14 @@ class TimestampCast(TypeCast):
         self.pat = fm_meta.timestamp_pattern
         self.tz = fm_meta.server_timezone
 
-    def __call__(self, value):
+    def __call__(self, value: str) -> Optional[datetime.datetime]:
         try:
             d = datetime.datetime.strptime(
                 value,
                 self.pat,
             )
             if self.tz:
-                d = self.tz.localize(d)
-                d = self.tz.normalize(d)
+                d = d.replace(tzinfo=self.tz)
             return d
         except (ValueError, TypeError):
             return None
