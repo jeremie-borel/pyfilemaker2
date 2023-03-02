@@ -90,7 +90,7 @@ package.
 ### 5. CHANGES
 
 0.2.5:
-- server_timezone parameter now requires a zoneinfo.ZoneInfo object or None.
+- BACKWARD INCOMPATIBLE: server_timezone parameter now requires a zoneinfo.ZoneInfo object or None. Timezones from pytz are not supported anymore. To use another package (e.g. pytz), one can overload the BackCast class from caster and define it as the :back_cast_class: static member of FmInstance.
 
 0.2.4:
 - Fix https://github.com/jeremie-borel/pyfilemaker2/issues/1 that prevented FMS 19 to work.
