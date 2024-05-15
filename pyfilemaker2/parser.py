@@ -1,7 +1,6 @@
-#!/usr/bin/env python
-# -*- coding: utf8 -*-
-
+from typing import Generator, Optional, TYPE_CHECKING
 from lxml import etree
+
 
 from .errors import FmError, XmlError
 
@@ -10,10 +9,18 @@ from .metadata import (
     FmMeta,
 )
 
+if TYPE_CHECKING:
+    from pyfilemaker2.data import MutableDict
+
+
 __all__ = ['parse']
 
 
-def parse(stream, fm_meta=None, only_meta=False):
+def parse(
+    stream,
+    fm_meta: Optional[FmMeta] = None,
+    only_meta: bool = False,
+) -> Generator[dict, None, None]:
     """
     Generator that parses an FMS xml response.
 
@@ -27,7 +34,6 @@ def parse(stream, fm_meta=None, only_meta=False):
 
     tree = etree.iterparse(
         stream,
-        # events=("start", "end"),
         events=('start-ns', 'start', 'end'),
     )
 
@@ -53,7 +59,9 @@ def parse(stream, fm_meta=None, only_meta=False):
                     data_buffer.append(caster.caster(value))
 
             elif tag == 'field':
-                raw_name = fm_meta.decode_attrs(elem.attrib.get('name', '')) or None
+                raw_name = fm_meta.decode_attrs(
+                    elem.attrib.get('name', '')
+                ) or None
                 try:
                     field = fm_meta.get_fm_field(
                         raw_name=raw_name,
@@ -77,7 +85,7 @@ def parse(stream, fm_meta=None, only_meta=False):
 
             elif tag == 'relatedset':
                 table = None
-                record = super_record
+                record: 'MutableDict' = super_record
                 super_record = None
 
             elif tag == 'error':
@@ -115,6 +123,9 @@ def parse(stream, fm_meta=None, only_meta=False):
                 metadata_parser(node=elem, fm_meta=fm_meta)
                 if only_meta:
                     break
+
+            elif tag == 'product':
+                fm_meta.fms_version = elem.attrib.get('version', '')
 
         elif event == 'start':
             tag = fm_meta.get_tagname(elem)
