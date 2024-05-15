@@ -1,7 +1,7 @@
 # -*- coding: utf8 -*-
 import unittest
 import datetime
-import pytz
+from zoneinfo import ZoneInfo
 
 from pyfilemaker2.metadata import FmMeta
 from pyfilemaker2.parser import parse
@@ -77,16 +77,16 @@ class TestFieldType(unittest.TestCase):
 
     def test_data_tz(self):
         f1 = os.path.join(basedir, './fields_types.xml')
-        tz = pytz.timezone('Europe/Zurich')
+        tz = ZoneInfo('Europe/Zurich')
         d = datetime.datetime(
             year=2018,
             month=9,
             day=1,
             hour=11,
             minute=54,
-            second=7
+            second=7,
+            tzinfo=tz,
         )
-        d = tz.normalize(tz.localize(d))
 
         fm = FmMeta(server_timezone=tz)
         nodeiter = parse(stream=f1, fm_meta=fm)
