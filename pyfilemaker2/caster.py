@@ -1,9 +1,15 @@
 # -*- coding: utf-8 -*-
 import datetime
 import numbers
-from typing import Any, Optional
+from typing import Any, Optional, TYPE_CHECKING
 
-# from builtins import str
+
+if TYPE_CHECKING:
+    from .metadata import (
+        FmMeta,
+        FmFieldBase,
+        FmFieldData,
+    )
 
 __all__ = ['default_cast_map']
 
@@ -17,7 +23,7 @@ FM_TIMESTAMP = 'timestamp'
 class TypeCast:
     """Type caster, get's initiated with the corresponding FmFieldData"""
 
-    def __init__(self, fm_field, fm_meta):
+    def __init__(self, fm_field: 'FmFieldBase', fm_meta: 'FmMeta'):
         pass
 
     def __call__(self, value: str) -> Any:
@@ -53,7 +59,7 @@ DummyCast = TextCast
 
 
 class DateCast(TypeCast):
-    def __init__(self, fm_field, fm_meta):
+    def __init__(self, fm_field: 'FmFieldData', fm_meta: 'FmMeta'):
         self.pat = fm_meta.date_pattern
 
     def __call__(self, value: str) -> Optional[datetime.date]:
@@ -68,7 +74,7 @@ class DateCast(TypeCast):
 
 
 class TimeCast(TypeCast):
-    def __init__(self, fm_field, fm_meta):
+    def __init__(self, fm_field, fm_meta: 'FmMeta'):
         self.pat = fm_meta.time_pattern
 
     def __call__(self, value: str) -> Optional[datetime.time]:
@@ -82,7 +88,7 @@ class TimeCast(TypeCast):
 
 
 class TimestampCast(TypeCast):
-    def __init__(self, fm_field, fm_meta):
+    def __init__(self, fm_field, fm_meta: 'FmMeta'):
         self.pat = fm_meta.timestamp_pattern
         self.tz = fm_meta.server_timezone
 
@@ -140,7 +146,7 @@ class BackCast:
         return str(value)
 
 
-default_cast_map = {
+default_cast_map: dict[str, type[TypeCast]] = {
     FM_NUMBER: NumberCast,
     FM_TEXT: TextCast,
     FM_DATE: DateCast,
