@@ -1,4 +1,5 @@
 
+from typing import Any, Generator, Iterable, Literal, Optional, TypeVar, Union, overload
 from urllib.parse import urlparse, urlencode
 from zoneinfo import ZoneInfo
 
@@ -14,15 +15,17 @@ from .metadata import FmMeta
 from .errors import FmError
 from .parser import parse
 from .data import MutableDict
-from .caster import BackCast
+from .caster import BackCast, TypeCast
 
+FmRecord = TypeVar('FmRecord', bound=dict)
+FmRecordStream = Generator[FmRecord, None, None]
 
 log = logging.getLogger(__name__)
 
 __all__ = ['FmServer']
 
 
-class FmServer():
+class FmServer:
     """
     Main class to interact with FM server instances.
 
@@ -50,7 +53,7 @@ class FmServer():
     )
     """
     meta_class = FmMeta
-    cast_map = None
+    cast_map: dict[str, type[TypeCast]]
     back_cast_class = BackCast
     # ! WARNING: Some FMS *require* the stream=True argument.
     request_kwargs = {
@@ -58,19 +61,19 @@ class FmServer():
         'verify': True,
         'timeout': 25,
     }
-    server_timezone:ZoneInfo = None
+    server_timezone: ZoneInfo
     # see _threaded_paginate function below.
     threaded_paginate = True
-    GET_FILE_REGEX = compile(
+    _GET_FILE_REGEX = compile(
         r'/fmi/xml/cnt/(?P<name>[,%\w\d.-]+)\.(?P<ext>[\w]+)[?]-'
     )
 
     def __init__(
         self,
-        url='http://login:password@localhost/fmi/xml/fmresultset.xml',
-        db='',
-        layout='',
-        debug=False,
+        url: str = 'http://login:password@localhost/fmi/xml/fmresultset.xml',
+        db: str = '',
+        layout: str = '',
+        debug: bool = False,
         **kwargs
     ):
         o = urlparse(url)
@@ -91,7 +94,7 @@ class FmServer():
         self.layout = layout
 
         self.debug = debug
-        self.fm_meta = None
+        self.fm_meta: Optional[FmMeta] = None
 
         self.options = {}
         optkeys = (
@@ -104,7 +107,7 @@ class FmServer():
         )
         for key in optkeys:
             if key in kwargs:
-                base = getattr(self.__class__, key)
+                base = getattr(self.__class__, key, None)
                 # copying default value if the argument is a dict.
                 if hasattr(base, 'update'):
                     self.options[key] = copy.copy(getattr(self.__class__, key))
@@ -112,32 +115,35 @@ class FmServer():
                 else:
                     self.options[key] = copy.copy(kwargs[key])
             else:
-                self.options[key] = copy.copy(getattr(self.__class__, key))
+                self.options[key] = copy.copy(
+                    getattr(self.__class__, key, None)
+                )
 
-    def get_db_names(self):
+    def get_db_names(self) -> tuple[str]:
         """Returns the list of databases available through xml"""
         query = FmQuery(action='-dbnames', fm_server=self)
         stream = self._do_request(query)
         return tuple(v['DATABASE_NAME'] for v in stream)
 
-    def get_layout_names(self):
+    def get_layout_names(self) -> tuple[str]:
         """Returns a tuple of all the available layouts in a db."""
         query = FmQuery(action='-layoutnames', fm_server=self)
         stream = self._do_request(query)
         return tuple(v['LAYOUT_NAME'] for v in stream)
 
-    def get_script_names(self):
+    def get_script_names(self) -> tuple[str]:
         """Retrurns a tuple of all the scripts"""
         query = FmQuery(action='-scriptnames', fm_server=self)
         stream = self._do_request(query)
         return tuple(v['SCRIPT_NAME'] for v in stream)
 
-    def get_field_names(self):
+    def get_field_names(self) -> tuple[str]:
         """Returns a tuple of all the fields accessible in the layout"""
         self.do_view()
+        assert (self.fm_meta)  # self.do_view sets fm_meta
         return tuple(self.fm_meta.fields.keys())
 
-    def get_file(self, file_xml_uri, canonical_filename=True):
+    def get_file(self, file_xml_uri, canonical_filename=True) -> tuple[str, str, bytes]:
         """Fetches container data from an FM server
 
         e.g. on file mydb.fmp12, a layout 'my_layout' has a field 'join'
@@ -157,7 +163,7 @@ class FmServer():
         file_name = ""
         file_extension = ""
         if canonical_filename:
-            find = FmServer.GET_FILE_REGEX.match(file_xml_uri)
+            find = FmServer._GET_FILE_REGEX.match(file_xml_uri)
             if not find:
                 raise FmError(code=700)
 
@@ -166,7 +172,7 @@ class FmServer():
         file_binary = self._do_request(is_file=True, query=file_xml_uri)
         return (file_name, file_extension, file_binary)
 
-    def do_script(self, script_name, param=None, return_all=True):
+    def do_script(self, script_name: str, param: str = '', return_all: bool = True) -> FmRecordStream:
         """
         Triggers the excution of script :script_name: on the FM server.
         Note that a script always returns the results from the layout with
@@ -205,19 +211,19 @@ class FmServer():
     def do_script_after(self, func, func_kwargs={}, script_name='', params=None):
         raise NotImplementedError("not yet implemented")
 
-    def fetched_records_number(self, safe=True):
-        """Returns the number of result in the resultset
+    def fetched_records_number(self, safe: bool = True) -> int:
+        """Return the number of result in the resultset
 
         ATM available only once the first result has been parsed, not before.
         """
         try:
             return self.fm_meta.fetch_count
-        except AttributeError:
+        except Exception:
             if safe:
                 return -1
             raise AttributeError("Resultset has not been evaluated yet.")
 
-    def total_records_number(self, safe=True):
+    def total_records_number(self, safe: bool = True) -> int:
         """
         Returns the number of result that would be returned in a do_find_all
         request.
@@ -230,12 +236,28 @@ class FmServer():
         """
         try:
             return self.fm_meta.total_count
-        except AttributeError:
+        except Exception:
             if safe:
                 return -1
-            raise AttributeError("Resultset has not been evaluated yet.")
+        raise AttributeError("Resultset has not been evaluated yet.")
 
-    def do_find_query(self, query_dict, skip=None, max=None, sort=[], paginate=None):
+    def fms_version(self, safe: bool=True) -> str:
+        """Return the version of the server."""
+        try:
+            return self.fm_meta.fms_version
+        except Exception:
+            if safe:
+                return ''
+        raise AttributeError("No query has been done yet, fms_version is unknown.")
+
+    def do_find_query(
+        self,
+        query_dict,
+        skip: int = 0,
+        max: int = 0,
+        sort: Iterable = [],
+        paginate: int = 0
+    ) -> FmRecordStream:
         """
         Allows to do more complex queries than do_find.
 
@@ -340,7 +362,16 @@ class FmServer():
         stream = self._do_request(query, paginate=paginate)
         return stream
 
-    def do_find(self, what={}, sort=[], skip=None, max=None, lop='AND', paginate=None, **kwargs):
+    def do_find(
+        self,
+        what={},
+        sort=[],
+        skip: int = 0,
+        max: int = 0,
+        lop: str = 'AND',
+        paginate: int = 0,
+        **kwargs
+    ) -> FmRecordStream:
         """Performs a find query on the FM server
 
         search criterions can be specified through the :what: parameters or
@@ -407,23 +438,23 @@ class FmServer():
         stream = self._do_request(query, paginate=paginate)
         return stream
 
-    def do_find_all(self, sort=[], skip=None, max=None, paginate=None):
+    def do_find_all(self, sort=[], skip: int = 0, max: int = 0, paginate: int = 0) -> FmRecordStream:
         """Finds all records in the layout."""
         query = FmQuery(action='-findall', fm_server=self)
         query.pre_find(sort=sort, skip=skip, max=max)
         stream = self._do_request(query, paginate=paginate)
         return stream
 
-    def do_find_any(self, what={}, sort=[], lop='AND', **params):
+    def do_find_any(self, sort=[]):
         """Finds all records in the layout."""
         query = FmQuery(action='-findany', fm_server=self)
-        query.pre_find(sort=sort, lop=lop)
+        query.pre_find(sort=sort)
         stream = tuple(self._do_request(query))
         if stream and len(stream) > 0:
             return stream[0]
         return []
 
-    def do_delete(self, what, error_if_missing=True):
+    def do_delete(self, what: MutableDict, error_if_missing: bool = True):
         """
         Deletes the record identified by the rec-id attribute of the xml
         E.g.
@@ -456,11 +487,13 @@ class FmServer():
                     return None
             raise FmError from e
 
-    def do_edit(self, what=None, **kwargs):
+    def do_edit(self, what: Optional[Union[MutableDict, dict]] = None, **kwargs) -> None:
         """
-        Edits a record.
-        Trick to editate multi value fields:
+        Edits a record. If what is a classical dict, it must contains the
+        record_id field (an internal value of fms) or the record_id must be
+        passed in the kwargs.
 
+        Trick to editate multi value fields:
         fm.do_edit(what={'record_id':rec.record_id, 'dataC(3)':'bijour'})
 
         """
@@ -541,18 +574,37 @@ class FmServer():
         for key, value in kwargs.items():
             query.add_param(name=key, value=value)
 
-    def _build_url(self):
+    def _build_url(self) -> str:
         tmpl = "{scheme}://{hostname}:{port}{path}"
         return tmpl.format(**self.url)
 
-    def _build_file_url(self, xml_req):
+    def _build_file_url(self, xml_req) -> str:
         """Builds url for fetching the files from FM."""
         return '{scheme}://{hostname}:{port}{xml_req}'.format(
             xml_req=xml_req,
             **self.url
         )
 
-    def _do_request(self, query, is_file=False, paginate=None):
+    @overload
+    def _do_request(
+        self,
+        query: 'FmQuery',
+        is_file: Literal[True],
+        paginate: int = 0) -> bytes: ...
+
+    @overload
+    def _do_request(
+        self,
+        query: 'FmQuery',
+        is_file: Literal[False] = False,
+        paginate: int = 0) -> FmRecordStream: ...
+
+    def _do_request(
+        self,
+        query: 'FmQuery',
+        is_file: bool = False,
+        paginate: int = 0,
+    ) -> Union[bytes, FmRecordStream]:
         if is_file:
             url = self._build_file_url(xml_req=query)
         else:
@@ -578,10 +630,10 @@ class FmServer():
                 )
 
         if self.debug:
-            log.info("FmServer({})".format(url))
+            log.info(f"FmServer({url})")
             if not is_file:
                 for item in query.request:
-                    log.info("  {}".format(item))
+                    log.info(f"  {item}")
 
         resp = requests.get(
             url=url,
@@ -609,13 +661,13 @@ class FmServer():
         )
 
 
-class FmQuery():
+class FmQuery:
     """This class is internal to FmServer. It is used to define the arguements
     that can or must be passed with a given action and it formats and casts
     theses arguments before building a request url."""
     _scripts = [
-        '-script', '–script.param', '-script.prefind', '-script.prefind.param',
-        '-script.presort', '–script.presort.param'
+        '-script', '-script.param', '-script.prefind', '-script.prefind.param',
+        '-script.presort', '-script.presort.param'
     ]
     _layr = ['-lay.response']
     _finds = ['-recid', '-lop', '-op', '-max',
@@ -703,38 +755,47 @@ class FmQuery():
         'lte': 'lte',
     }
 
-    def __init__(self, action=None, fm_server=None):
+    def __init__(self, action: str, fm_server: FmServer):
         if action not in self.__class__.actions:
-            raise FmError("Invalid action name ({})".format(action))
+            raise FmError(f"Invalid action name '{action}'.")
         self.fm_server = fm_server
         self.action = action
         self.grammar = self.__class__.actions[self.action]
-        self.args = {
+        self.args: dict[str, Union[str, int]] = {
             '-db': self.fm_server.db,
             '-lay': self.fm_server.layout,
         }
         self._params = []
         self.back_cast = None
 
-    def set_max(self, value):
+    def set_max(self, value: int):
         try:
             _max = int(value)
         except ValueError:
-            raise FmError("Max value must be a number (got {})".format(value))
+            raise FmError(f"Max value must be a number (got {value})")
         if _max < 0:
-            raise FmError("Max value must be positive (got {})".format(_max))
+            raise FmError(f"Max value must be positive (got {_max})")
         self.args['-max'] = _max
 
-    def set_skip(self, value):
+    def set_skip(self, value: int):
         try:
             _skip = int(value)
         except ValueError:
-            raise FmError("Skip value must be a number (got {})".format(value))
+            raise FmError(f"Skip value must be a number (got {value})")
         if _skip < 0:
-            raise FmError("Skip value must be positive (got {})".format(_skip))
+            raise FmError(f"Skip value must be positive (got {_skip})")
         self.args['-skip'] = _skip
 
-    def add_sort_params(self, sort):
+    def add_sort_params(self, sort: Iterable[Union[str, tuple[str, str]]]):
+        """
+        Add a sorting criterion to the query.
+
+        E.g. 
+        sort = ['fieldA', '-fieldB', ...]
+        or sort = [('fieldA','ascend'), ('fieldB', 'descend'), 'fieldC', ...]
+
+        syntaxes -field ('field','ascend'), ('field', '<') are all equivalent.
+        """
         for i, item in enumerate(sort):
             if isinstance(item, str):
                 field = item
@@ -753,8 +814,8 @@ class FmQuery():
             if sort_order:
                 self._params.append(('-sortorder.{}'.format(i+1), sort_order))
 
-    def pre_find(self, sort=[], skip=None, max=None, lop='AND'):
-        """This function will process attributtes for all -find* commands."""
+    def pre_find(self, sort=[], skip: int = 0, max: int = 0, lop: str = 'AND'):
+        """Process attributtes for all -find* commands."""
         self.add_sort_params(sort)
         if skip:
             self.set_skip(skip)
@@ -763,16 +824,19 @@ class FmQuery():
         if lop:
             if lop.lower() not in ['and', 'or']:
                 raise FmError(
-                    'Unsupported logical operator '
-                    '(not one of "and" or "or").'
+                    f"Logical operator must be 'and' or 'or'. Got '{lop}'."
                 )
             self.args['-lop'] = lop.lower()
 
-    def add_args(self, name, value):
+    def add_args(self, name: str, value):
+        """Add a keyword for the futur query
+
+        :value: must be encodable for an url. So basically int or str.
+        """
         self.args[name] = value
 
-    def add_param(self, name, value, parse_operator=True):
-        """Adds a database parameter"""
+    def add_param(self, name: str, value, parse_operator: bool = True):
+        """Add a keyword/value for the futur query"""
 
         # finding the table and operator parts if any
         parts = name.split('__')
@@ -795,15 +859,10 @@ class FmQuery():
 
         self._params.append((field, casted_value))
         if op:
-            self._params.append(("{}.op".format(field), op))
+            self._params.append((f"{field}.op", op))
 
-    def is_allowed(self, name):
-        self.grammar = self.__class__.actions[self.action]
-        if name in self.grammar.required or name in self.grammar.optional:
-            return True
-        return False
-
-    def format(self):
+    def format(self) -> str:
+        """Builds the query as url string"""
         if not self.action:
             raise FmError("Empty action name")
         request = []
@@ -812,8 +871,7 @@ class FmQuery():
         for key in self.grammar['required']:
             if key not in args:
                 raise ValueError(
-                    "A required argument ({}) is not present for action {}"
-                    .format(key, self.action)
+                    f"A required argument ({key}) is not present for action {self.action}"
                 )
 
             value = args.pop(key)
@@ -837,7 +895,7 @@ class FmQuery():
         return urlencode(request, doseq=False)
 
 
-def _paginate(fm_server, query, page_size, current=0):
+def _paginate(fm_server: FmServer, query: FmQuery, page_size: int, current: int = 0) -> FmRecordStream:
     fm_server_copy = copy.copy(fm_server)
     query = copy.copy(query)
 
@@ -846,7 +904,7 @@ def _paginate(fm_server, query, page_size, current=0):
     for item in fm_server_copy._do_request(
         query,
         is_file=False,
-        paginate=None
+        paginate=0
     ):
         fm_server.fm_meta = fm_server_copy.fm_meta
         yield item
@@ -866,7 +924,7 @@ def _paginate(fm_server, query, page_size, current=0):
         yield item
 
 
-def _threaded_paginate(fm_server, query, page_size):
+def _threaded_paginate(fm_server: FmServer, query: FmQuery, page_size: int) -> FmRecordStream:
     """
     Instead of 'classic' pagination, we launch a thread that only fetchs the
     data and fills a queue.Queue objects. The main loop consumes the queue and
@@ -882,7 +940,7 @@ def _threaded_paginate(fm_server, query, page_size):
     processing order is preserved.
     """
 
-    def _data_fetcher(fm_server, query, page_size, current, share_mem):
+    def _data_fetcher(fm_server: FmServer, query: FmQuery, page_size: int, current, share_mem):
         """"
         Procuces a recursive call to do_request for the next :page_size: object
         and always fills the result into share_mem['data'] then notifies the
@@ -897,7 +955,7 @@ def _threaded_paginate(fm_server, query, page_size):
             for item in fm_server_copy._do_request(
                 query,
                 is_file=False,
-                paginate=None
+                paginate=0
             ):
                 fm_server.fm_meta = fm_server_copy.fm_meta
                 # push data into queue.Queue object
