@@ -10,11 +10,14 @@ python setup.py sdist
 pip install twine
 
 # upload the source
+# use api token as per https://test.pypi.org/help/#apitoken
 # test repo
 twine upload --repository-url https://test.pypi.org/legacy/ dist/*
 
 # legagcy repo
 twine upload dist/*
+
+
 
 # install from test repo:
 pip  --no-cache  install --index-url https://test.pypi.org/simple/ pyfilemaker2==0.2.4
