@@ -38,10 +38,9 @@ def parse(
     )
 
     record = fm_meta.get_record_class()()
-    table = None  # related table
+    reltable = ''  # related table
     relatedset = []
     data_buffer = []
-    decode = fm_meta.decode_data
     caster = None
     super_record = None
 
@@ -54,18 +53,18 @@ def parse(
         elif event == 'end':
             tag = fm_meta.get_tagname(elem)
             if tag == 'data':
-                value = decode(elem.text)
+                value = fm_meta.decode_data(elem.text)
                 if caster:
                     data_buffer.append(caster.caster(value))
 
             elif tag == 'field':
                 raw_name = fm_meta.decode_attrs(
                     elem.attrib.get('name', '')
-                ) or None
+                )
                 try:
                     field = fm_meta.get_fm_field(
                         raw_name=raw_name,
-                        table=table
+                        related_table=reltable
                     )
                     field.set_value(record=record, data_list=data_buffer)
                 except KeyError:
@@ -76,15 +75,16 @@ def parse(
                 # end a record. Either in relatedset or not.
                 record.record_id = elem.attrib.get('record-id', None)
                 record.mod_id = elem.attrib.get('mod-id', None)
-                if not table:
+                if not reltable:
                     yield record
                     record = fm_meta.get_record_class()()
 
                 else:
                     relatedset.append(record)
+                    record = fm_meta.get_record_class()()
 
             elif tag == 'relatedset':
-                table = None
+                reltable = ''
                 record: 'MutableDict' = super_record
                 super_record = None
 
@@ -134,15 +134,15 @@ def parse(
                 try:
                     caster = fm_meta.get_fm_field(
                         raw_name=fm_meta.decode_attrs(elem.attrib['name']),
-                        table=table
+                        related_table=reltable
                     )
                 except KeyError:
                     pass
 
             elif tag == 'relatedset':
-                table = elem.attrib['table']
-                record[table] = []
-                relatedset = record[table]
+                reltable:str= elem.attrib['table']
+                record[reltable] = []
+                relatedset = record[reltable]
                 super_record = record
                 record = fm_meta.get_record_class()()
 
