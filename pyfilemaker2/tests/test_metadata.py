@@ -49,11 +49,11 @@ class TestFieldType(unittest.TestCase):
         }
 
         for k, v in map.items():
-            f = b.get_fm_field(raw_name=k, table=None)
+            f = b.get_fm_field(raw_name=k, related_table='')
             self.assertEqual(f.caster.__class__, v)
 
     def test_data1(self):
-        # https://{user}:{pswd}@{host}/fmi/xml/fmresultset.xml?-db=TestJeremie&-lay=test_table1&-findall
+        # https://{user}:{pswd}@{host}/fmi/xml/fmresultset.xml?-db=TestFile&-lay=test_table1&-findall
         f1 = os.path.join(basedir, './fields_types.xml')
         nodeiter = parse(stream=f1)
         data = [p for p in nodeiter]
@@ -96,7 +96,7 @@ class TestFieldType(unittest.TestCase):
         self.assertEqual(d, val)
 
     def test_non_ascii_chars(self):
-        # https://{user}:{pswd}@{host}/fmi/xml/fmresultset.xml?-db=TestJeremie&-lay=test_awfull_table&-findall
+        # https://{user}:{pswd}@{host}/fmi/xml/fmresultset.xml?-db=TestFile&-lay=test_awfull_table&-findall
         f1 = os.path.join(basedir, './non_ascii_chars.xml')
         nodeiter = parse(stream=f1)
         data = [p for p in nodeiter]

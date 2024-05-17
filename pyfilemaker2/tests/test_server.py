@@ -90,6 +90,17 @@ class TestServerOffline(unittest.TestCase):
             'étoile mâtinée',
         ]))
 
+    @mock.patch.object(requests, 'get')
+    def test_relatedset(self, mock_get):
+        mock_get.return_value = Dummy('./ressources/related_set.xml')
+        fm = FmServer(db='test', layout='dummy')
+        record = list(fm.do_find(idb=3))[0]
+        self.assertEqual(
+            record,
+            {"idb": "3", "link2C": "2", "tableC": "elem de B", "tableA": [{"tableA": {"link2B": "3", "data": "abc", "tableC": {
+                "dataC": ["Un texte"]}}}, {"tableA": {"link2B": "3", "data": "def", "tableC": {"dataC": [""]}}}]}
+        )
+
 
 class TestServerOnline(unittest.TestCase):
     def test_find_equal(self):

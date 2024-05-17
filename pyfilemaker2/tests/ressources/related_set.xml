@@ -1,0 +1,53 @@
+<fmresultset xmlns="http://www.filemaker.com/xml/fmresultset" version="1.0">
+    <script/>
+    <error code="0"/>
+    <product build="04/27/2022" name="FileMaker Web Publishing Engine" version="19.5.1.43"/>
+    <datasource database="TestFile" date-format="MM/dd/yyyy" layout="tableB" table="tableB" time-format="HH:mm:ss" timestamp-format="MM/dd/yyyy HH:mm:ss" total-count="3"/>
+    <metadata>
+        <field-definition auto-enter="no" four-digit-year="no" global="no" max-repeat="1" name="idb" not-empty="no" numeric-only="no" result="text" time-of-day="no" type="normal"/>
+        <field-definition auto-enter="no" four-digit-year="no" global="no" max-repeat="1" name="link2C" not-empty="no" numeric-only="no" result="text" time-of-day="no" type="normal"/>
+        <field-definition auto-enter="no" four-digit-year="no" global="no" max-repeat="1" name="tableC" not-empty="no" numeric-only="no" result="text" time-of-day="no" type="normal"/>
+        <relatedset-definition table="tableA">
+            <field-definition auto-enter="no" four-digit-year="no" global="no" max-repeat="1" name="tableA::link2B" not-empty="no" numeric-only="no" result="text" time-of-day="no" type="normal"/>
+            <field-definition auto-enter="no" four-digit-year="no" global="no" max-repeat="1" name="tableA::data" not-empty="no" numeric-only="no" result="text" time-of-day="no" type="normal"/>
+            <field-definition auto-enter="no" four-digit-year="no" global="no" max-repeat="3" name="tableC::dataC" not-empty="no" numeric-only="no" result="text" time-of-day="no" type="normal"/>
+        </relatedset-definition>
+    </metadata>
+    <resultset count="1" fetch-size="1">
+        <record mod-id="1" record-id="3">
+            <field name="idb">
+                <data>3</data>
+            </field>
+            <field name="link2C">
+                <data>2</data>
+            </field>
+            <field name="tableC">
+                <data>elem de B</data>
+            </field>
+            <relatedset count="2" table="tableA">
+                <record mod-id="3" record-id="3">
+                    <field name="tableA::link2B">
+                        <data>3</data>
+                    </field>
+                    <field name="tableA::data">
+                        <data>abc</data>
+                    </field>
+                    <field name="tableC::dataC">
+                        <data>Un texte</data>
+                    </field>
+                </record>
+                <record mod-id="1" record-id="4">
+                    <field name="tableA::link2B">
+                        <data>3</data>
+                    </field>
+                    <field name="tableA::data">
+                        <data>def</data>
+                    </field>
+                    <field name="tableC::dataC">
+                        <data/>
+                    </field>
+                </record>
+            </relatedset>
+        </record>
+    </resultset>
+</fmresultset>
